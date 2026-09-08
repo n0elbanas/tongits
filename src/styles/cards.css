@@ -1,0 +1,271 @@
+.card-wrapper {
+  position: relative;
+  display: inline-block;
+  user-select: none;
+  perspective: 1000px;
+  touch-action: none;
+}
+
+.playing-card-container {
+  position: relative;
+  width: clamp(44px, 8.8vw, 82px);
+  aspect-ratio: 5 / 7;
+  border-radius: clamp(5px, 0.9vw, 8px);
+  box-shadow: var(--shadow-card);
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.2s ease;
+  transform-origin: center bottom;
+  cursor: pointer;
+}
+
+.playing-card {
+  position: relative;
+  width: clamp(44px, 8.8vw, 82px);
+  aspect-ratio: 5 / 7;
+  border-radius: clamp(5px, 0.9vw, 8px);
+  box-shadow: 
+    0 4px 12px rgba(0, 0, 0, 0.45),
+    0 1px 3px rgba(0, 0, 0, 0.3),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.2s ease;
+  transform-origin: center bottom;
+  cursor: pointer;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* Card Surface with Ivory Tone & Realistic Subtle Edge Shading */
+.playing-card.front {
+  background: 
+    radial-gradient(circle at 50% 35%, #ffffff 0%, #fbf9f4 60%, #f3ede2 100%);
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: clamp(3px, 0.8vw, 6px);
+  color: #111827;
+}
+
+/* Full-size Classic & Premium Card Faces */
+.playing-card.classic-card-face,
+.playing-card.premium-card-face {
+  padding: 0 !important;
+  border-radius: clamp(4px, 0.7vw, 7px);
+  overflow: hidden !important;
+}
+
+.playing-card.classic-card-face {
+  background: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.2) !important;
+}
+
+.playing-card.premium-card-face {
+  background: #fbf9f2 !important;
+  border: 1px solid rgba(0, 0, 0, 0.24) !important;
+}
+
+.playing-card.classic-card-face img,
+.playing-card.premium-card-face img {
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  display: block;
+  border-radius: inherit;
+  user-select: none;
+  pointer-events: none;
+  opacity: 1 !important;
+}
+
+/* Luxury Inner Hairline Frame */
+.card-inner-border {
+  position: absolute;
+  inset: clamp(2px, 0.5vw, 4px);
+  border-radius: clamp(3px, 0.6vw, 5px);
+  border: 0.75px solid rgba(180, 160, 130, 0.35);
+  pointer-events: none;
+}
+
+.playing-card.red {
+  color: #b91c1c;
+}
+
+.playing-card.black {
+  color: #141824;
+}
+
+/* Card corner indicators */
+.card-corner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 0.95;
+  font-family: var(--font-serif);
+  font-weight: 800;
+  z-index: 5;
+  gap: 1px;
+}
+
+.card-corner-rank {
+  font-size: clamp(10px, 1.8vw, 16px);
+  letter-spacing: -0.02em;
+}
+
+.card-corner.bottom-right {
+  transform: rotate(180deg);
+  align-self: flex-end;
+}
+
+/* Card Central Body & Pips */
+.card-body {
+  position: absolute;
+  inset: clamp(12px, 2.4vw, 20px) clamp(8px, 1.6vw, 14px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.card-court-wrapper {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card-ace-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.card-ace-emblem {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+}
+
+.card-pips-wrapper {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Selection and Hover States */
+.playing-card.selected,
+.playing-card-container.selected {
+  transform: translateY(-18px) scale(1.05);
+  box-shadow: 
+    0 18px 36px rgba(0, 0, 0, 0.7),
+    0 0 0 2.5px #f59e0b,
+    0 0 20px rgba(245, 158, 11, 0.6);
+  z-index: 50;
+}
+
+.playing-card.meld-highlight {
+  box-shadow: 
+    0 8px 24px rgba(0, 0, 0, 0.5),
+    0 0 0 2px #10b981,
+    0 0 16px rgba(16, 185, 129, 0.7);
+}
+
+.playing-card:hover:not(.disabled):not(.selected),
+.playing-card-container:hover:not(.disabled):not(.selected) {
+  transform: translateY(-8px);
+  box-shadow: var(--shadow-card-hover);
+}
+
+.playing-card.disabled,
+.playing-card-container.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  filter: brightness(0.85);
+}
+
+/* Card Back Container */
+.playing-card.back {
+  background: #051b14;
+  border-radius: inherit;
+  box-shadow: var(--shadow-card);
+}
+
+/* Player Hand Container */
+.player-hand-container {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  height: clamp(90px, 15vw, 145px);
+  padding: 0 clamp(4px, 1.5vw, 16px);
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  overflow: visible;
+}
+
+.player-hand-cards {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  width: 100%;
+}
+
+/* Mobile Responsive Card Overrides (Portrait) */
+@media (max-width: 640px) and (orientation: portrait) {
+  .playing-card-container,
+  .playing-card {
+    width: clamp(38px, 8.4vw, 54px);
+  }
+
+  .player-hand-container {
+    height: clamp(75px, 14dvh, 105px);
+    padding: 0 4px;
+  }
+
+  .playing-card.selected,
+  .playing-card-container.selected {
+    transform: translateY(-12px) scale(1.04);
+  }
+}
+
+@media (max-width: 400px) and (orientation: portrait) {
+  .playing-card-container,
+  .playing-card {
+    width: clamp(34px, 8.2vw, 44px);
+  }
+
+  .player-hand-container {
+    height: clamp(68px, 13dvh, 92px);
+  }
+}
+
+/* Mobile & Tablet Landscape: Make cards noticeably bigger without overlap or clipping */
+@media (orientation: landscape) and (max-height: 560px) {
+  .playing-card-container,
+  .playing-card {
+    width: clamp(56px, 8.4vw, 76px);
+  }
+
+  .player-hand-container {
+    height: clamp(98px, 27dvh, 122px);
+    padding: 0 12px;
+    max-width: 95vw;
+  }
+
+  .playing-card.selected,
+  .playing-card-container.selected {
+    transform: translateY(-16px) scale(1.05);
+  }
+
+  .card-corner-rank {
+    font-size: clamp(12px, 1.8vw, 16px);
+  }
+}
+
+
