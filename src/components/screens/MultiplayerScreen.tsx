@@ -10,18 +10,15 @@ import {
   Zap,
   Copy,
   Check,
-  MessageSquare,
   Send,
   Play,
-  LogOut,
-  Sparkles,
-  Shield,
-  Search,
+  UserPlus,
+  AlertCircle,
 } from 'lucide-react';
 import { soundManager } from '../../audio/soundEffects';
 import { PlayerAvatar } from '../common/PlayerAvatar';
-import { AVATARS_CATALOG } from '../../game/avatars/avatarData';
-import { BroadcastGameTransport } from '../../game/network/transport';
+import { wsTransport } from '../../game/network/websocketTransport';
+import { RoomState, PublicRoomInfo, RoomPlayer } from '../../game/network/types';
 
 export interface MultiplayerTableData {
   id: string;
@@ -34,8 +31,6 @@ export interface MultiplayerTableData {
   ping: string;
   code: string;
   isPrivate?: boolean;
-  opp1: { name: string; avatar: string; difficulty?: 'EASY' | 'MEDIUM' | 'HARD'; personality?: any };
-  opp2: { name: string; avatar: string; difficulty?: 'EASY' | 'MEDIUM' | 'HARD'; personality?: any };
 }
 
 interface MultiplayerScreenProps {
@@ -49,61 +44,44 @@ interface MultiplayerScreenProps {
     playerAvatar: string;
     opponent1: { name: string; avatar: string; difficulty?: any; personality?: any };
     opponent2: { name: string; avatar: string; difficulty?: any; personality?: any };
+    isServerMultiplayer?: boolean;
+    serverPlayerId?: string;
   }) => void;
 }
 
-const DEFAULT_ROOMS: MultiplayerTableData[] = [
+const DEFAULT_SAMPLE_ROOMS: MultiplayerTableData[] = [
   {
     id: 'room-1',
     name: 'Manila Masters (High Stakes)',
     host: 'Rafael',
-    hostAvatar: 'avatar-3',
-    players: 2,
+    hostAvatar: 'avatar_3',
+    players: 1,
     max: 3,
     ante: 10,
     ping: '22ms',
-    code: 'MNL-99',
-    opp1: { name: 'Rafael', avatar: 'avatar-3', difficulty: 'HARD', personality: 'AGGRESSIVE' },
-    opp2: { name: 'Sofia', avatar: 'avatar-2', difficulty: 'MEDIUM', personality: 'CONSERVATIVE' },
+    code: 'MNL99',
   },
   {
     id: 'room-2',
     name: 'Cebu Casuals Table',
     host: 'Liza',
-    hostAvatar: 'avatar-4',
+    hostAvatar: 'avatar_4',
     players: 2,
     max: 3,
     ante: 2,
     ping: '35ms',
-    code: 'CEB-14',
-    opp1: { name: 'Liza', avatar: 'avatar-4', difficulty: 'MEDIUM', personality: 'BALANCED' },
-    opp2: { name: 'Carlos', avatar: 'avatar-5', difficulty: 'EASY', personality: 'BALANCED' },
+    code: 'CEB14',
   },
   {
     id: 'room-3',
     name: 'Baguio Pro League',
     host: 'Marco',
-    hostAvatar: 'avatar-7',
-    players: 2,
+    hostAvatar: 'avatar_5',
+    players: 1,
     max: 3,
     ante: 5,
     ping: '18ms',
-    code: 'BAG-88',
-    opp1: { name: 'Marco', avatar: 'avatar-7', difficulty: 'HARD', personality: 'AGGRESSIVE' },
-    opp2: { name: 'Bea', avatar: 'avatar-6', difficulty: 'MEDIUM', personality: 'BALANCED' },
-  },
-  {
-    id: 'room-4',
-    name: 'Davao High Rollers VIP',
-    host: 'Anton',
-    hostAvatar: 'avatar-9',
-    players: 2,
-    max: 3,
-    ante: 25,
-    ping: '28ms',
-    code: 'DVO-07',
-    opp1: { name: 'Anton', avatar: 'avatar-9', difficulty: 'HARD', personality: 'AGGRESSIVE' },
-    opp2: { name: 'Maya', avatar: 'avatar-8', difficulty: 'HARD', personality: 'CONSERVATIVE' },
+    code: 'BAG88',
   },
 ];
 
@@ -114,22 +92,15 @@ interface ChatMsg {
 }
 
 export const MultiplayerScreen: React.FC<MultiplayerScreenProps> = ({ onBack, onJoinTable }) => {
-  const [rooms, setRooms] = useState<MultiplayerTableData[]>(() => {
-    try {
-      const saved = sessionStorage.getItem('tongits_custom_rooms');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        return [...parsed, ...DEFAULT_ROOMS];
-      }
-    } catch {
-      // fallback
-    }
-    return DEFAULT_ROOMS;
-  });
+  // Server connection & room state
+  const [isConnected, setIsConnected] = useState(wsTransport.isConnected());
+  const [serverRooms, setServerRooms] = useState<PublicRoomInfo[]>([]);
+  const [serverRoom, setServerRoom] = useState<RoomState | null>(wsTransport.getCurrentRoom());
+  const [myPlayerId, setMyPlayerId] = useState<string>(wsTransport.getMyPlayerId());
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const [activeTab, setActiveTab] = useState<'ALL' | 'CASUAL' | 'HIGH_STAKES'>('ALL');
   const [currentView, setCurrentView] = useState<'LOBBY' | 'WAITING_ROOM'>('LOBBY');
-  const [activeRoom, setActiveRoom] = useState<MultiplayerTableData | null>(null);
 
   // Modals
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -137,101 +108,149 @@ export const MultiplayerScreen: React.FC<MultiplayerScreenProps> = ({ onBack, on
   const [quickMatchStatus, setQuickMatchStatus] = useState<'SEARCHING' | 'FOUND'>('SEARCHING');
 
   // Create Room Form state
-  const [newTableName, setNewTableName] = useState('My Manila VIP Table');
+  const [newTableName, setNewTableName] = useState('Manila VIP Table');
   const [newAnte, setNewAnte] = useState(5);
   const [isPrivateRoom, setIsPrivateRoom] = useState(false);
 
   // Private code input in Lobby
   const [roomCodeInput, setRoomCodeInput] = useState('');
-  const [codeError, setCodeError] = useState('');
 
   // Waiting Room state
-  const [isReady, setIsReady] = useState(true);
   const [copiedCode, setCopiedCode] = useState(false);
   const [chatMessages, setChatMessages] = useState<ChatMsg[]>([
-    { sender: 'System', text: 'Welcome to table lobby! Tap Ready to begin.' },
+    { sender: 'System', text: 'Connected to live room. Share room code or add bots!' },
   ]);
   const [chatInputText, setChatInputText] = useState('');
   const chatEndRef = useRef<HTMLDivElement>(null);
-  const transportRef = useRef<BroadcastGameTransport | null>(null);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages]);
 
-  // Cleanup transport on unmount
+  // Connect to WebSocket Server & register listeners
   useEffect(() => {
-    return () => {
-      transportRef.current?.disconnect();
-    };
-  }, []);
+    wsTransport.initConnection();
 
-  // Filtered rooms
-  const filteredRooms = rooms.filter((r) => {
+    const unsubConn = wsTransport.subscribeToConnection((conn) => {
+      setIsConnected(conn);
+    });
+
+    const unsubRooms = wsTransport.subscribeToRooms((rooms) => {
+      setServerRooms(rooms);
+    });
+
+    const unsubRoom = wsTransport.subscribeToRoom((room, myId) => {
+      setServerRoom(room);
+      setMyPlayerId(myId);
+      if (room) {
+        setCurrentView('WAITING_ROOM');
+      } else {
+        setCurrentView('LOBBY');
+      }
+    });
+
+    const unsubChat = wsTransport.subscribeToChat((msg) => {
+      setChatMessages((prev) => [
+        ...prev,
+        {
+          sender: msg.senderName,
+          text: msg.message,
+          isSelf: msg.senderId === wsTransport.getMyPlayerId(),
+        },
+      ]);
+    });
+
+    const unsubErrors = wsTransport.subscribeToErrors((err) => {
+      setErrorMessage(err);
+      setTimeout(() => setErrorMessage(null), 4000);
+    });
+
+    const unsubGameStart = wsTransport.subscribeToGameStart((initialState, pId) => {
+      soundManager.playMeld();
+      const opponents = initialState.players.filter((p) => p.id !== pId);
+      const opp1 = opponents[0] || { name: 'Player 2', avatar: 'avatar_2' };
+      const opp2 = opponents[1] || { name: 'Player 3', avatar: 'avatar_3' };
+
+      const currentRoom = wsTransport.getCurrentRoom();
+
+      onJoinTable({
+        tableName: currentRoom?.name || 'Live Match',
+        ante: currentRoom?.ante || initialState.ante || 5,
+        roomCode: currentRoom?.code || 'ONLINE',
+        ping: '18ms',
+        playerName: initialState.players.find((p) => p.id === pId)?.name || 'You',
+        playerAvatar: initialState.players.find((p) => p.id === pId)?.avatar || 'avatar_1',
+        opponent1: {
+          name: opp1.name,
+          avatar: opp1.avatar,
+          difficulty: 'MEDIUM',
+          personality: 'BALANCED',
+        },
+        opponent2: {
+          name: opp2.name,
+          avatar: opp2.avatar,
+          difficulty: 'MEDIUM',
+          personality: 'BALANCED',
+        },
+        isServerMultiplayer: true,
+        serverPlayerId: pId,
+      });
+    });
+
+    return () => {
+      unsubConn();
+      unsubRooms();
+      unsubRoom();
+      unsubChat();
+      unsubErrors();
+      unsubGameStart();
+    };
+  }, [onJoinTable]);
+
+  // Combined room list: server rooms + fallback sample rooms if server room list is empty
+  const displayRooms: MultiplayerTableData[] =
+    serverRooms.length > 0
+      ? serverRooms.map((r) => ({
+          id: r.id,
+          name: r.name,
+          host: r.hostName,
+          hostAvatar: r.hostAvatar,
+          players: r.playerCount,
+          max: r.maxPlayers,
+          ante: r.ante,
+          ping: '18ms',
+          code: r.code,
+        }))
+      : DEFAULT_SAMPLE_ROOMS;
+
+  const filteredRooms = displayRooms.filter((r) => {
     if (activeTab === 'CASUAL') return r.ante <= 5;
     if (activeTab === 'HIGH_STAKES') return r.ante >= 10;
     return true;
   });
 
-  // Action: Enter Waiting Room for a table
+  // Action: Select / Join Table
   const handleSelectTable = (table: MultiplayerTableData) => {
     soundManager.playButtonClick();
-    setActiveRoom(table);
-    setIsReady(true);
-    setCurrentView('WAITING_ROOM');
-
-    // Init cross-tab transport
-    transportRef.current?.disconnect();
-    const transport = new BroadcastGameTransport();
-    transportRef.current = transport;
-    transport.connect(table.code, 'human-player');
-    transport.subscribeToEvents((ev) => {
-      if (ev.type === 'CHAT') {
-        setChatMessages((prev) => [
-          ...prev,
-          { sender: ev.payload.senderName || 'Opponent', text: ev.payload.message },
-        ]);
-      }
+    wsTransport.joinRoom({
+      roomCode: table.code,
+      playerName: 'You',
+      playerAvatar: 'avatar_1',
     });
-
-    setChatMessages([
-      { sender: 'System', text: `Joined ${table.name}. Ante: ${table.ante} Chips.` },
-      { sender: table.host, text: 'Welcome to the table! Game na! 🃏' },
-    ]);
   };
 
   // Action: Create Table
   const handleCreateTableSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     soundManager.playButtonClick();
-
-    const randomSuffix = Math.floor(100 + Math.random() * 900);
-    const code = `VIP-${randomSuffix}`;
-    const newRoom: MultiplayerTableData = {
-      id: `room-custom-${Date.now()}`,
-      name: newTableName.trim() || 'Custom Room',
-      host: 'You',
-      hostAvatar: 'avatar-1',
-      players: 1,
-      max: 3,
+    wsTransport.createRoom({
+      tableName: newTableName.trim() || 'Custom Room',
       ante: newAnte,
-      ping: '16ms',
-      code,
       isPrivate: isPrivateRoom,
-      opp1: { name: 'Elena', avatar: 'avatar-10', difficulty: 'MEDIUM', personality: 'BALANCED' },
-      opp2: { name: 'Dante', avatar: 'avatar-11', difficulty: 'HARD', personality: 'AGGRESSIVE' },
-    };
-
-    const updated = [newRoom, ...rooms];
-    setRooms(updated);
-    try {
-      sessionStorage.setItem('tongits_custom_rooms', JSON.stringify([newRoom]));
-    } catch {
-      // ignore
-    }
-
+      playerName: 'You',
+      playerAvatar: 'avatar_1',
+    });
     setIsCreateModalOpen(false);
-    handleSelectTable(newRoom);
   };
 
   // Action: Quick Play
@@ -244,43 +263,39 @@ export const MultiplayerScreen: React.FC<MultiplayerScreenProps> = ({ onBack, on
       setQuickMatchStatus('FOUND');
       setTimeout(() => {
         setIsQuickMatchModalOpen(false);
-        const randomTable = rooms[Math.floor(Math.random() * rooms.length)];
-        handleSelectTable(randomTable);
-      }, 900);
+        const openServerRoom = serverRooms.find((r) => r.playerCount < 3);
+        if (openServerRoom) {
+          wsTransport.joinRoom({
+            roomCode: openServerRoom.code,
+            playerName: 'You',
+            playerAvatar: 'avatar_1',
+          });
+        } else {
+          // Auto create a casual table
+          wsTransport.createRoom({
+            tableName: 'Quick Match Table',
+            ante: 5,
+            isPrivate: false,
+            playerName: 'You',
+            playerAvatar: 'avatar_1',
+          });
+        }
+      }, 750);
     }, 1200);
   };
 
   // Action: Join by Code
   const handleJoinByCode = (e: React.FormEvent) => {
     e.preventDefault();
-    setCodeError('');
-    const codeClean = roomCodeInput.trim().toUpperCase();
-    if (!codeClean) return;
-
-    const matched = rooms.find((r) => r.code.toUpperCase() === codeClean);
-    if (matched) {
-      handleSelectTable(matched);
-      setRoomCodeInput('');
-    } else {
-      // Create a temporary private room with this code so friends can connect
-      const customTable: MultiplayerTableData = {
-        id: `room-code-${codeClean}`,
-        name: `Private Table (${codeClean})`,
-        host: 'Challenger',
-        hostAvatar: 'avatar-14',
-        players: 2,
-        max: 3,
-        ante: 5,
-        ping: '21ms',
-        code: codeClean,
-        isPrivate: true,
-        opp1: { name: 'Mateo', avatar: 'avatar-13', difficulty: 'MEDIUM', personality: 'BALANCED' },
-        opp2: { name: 'Carmen', avatar: 'avatar-12', difficulty: 'HARD', personality: 'CONSERVATIVE' },
-      };
-      setRooms((prev) => [customTable, ...prev]);
-      handleSelectTable(customTable);
-      setRoomCodeInput('');
-    }
+    const code = roomCodeInput.trim().toUpperCase();
+    if (!code) return;
+    soundManager.playButtonClick();
+    wsTransport.joinRoom({
+      roomCode: code,
+      playerName: 'You',
+      playerAvatar: 'avatar_1',
+    });
+    setRoomCodeInput('');
   };
 
   // Action: Send Chat
@@ -288,46 +303,51 @@ export const MultiplayerScreen: React.FC<MultiplayerScreenProps> = ({ onBack, on
     const text = (textToSend || chatInputText).trim();
     if (!text) return;
     soundManager.playButtonClick();
-    setChatMessages((prev) => [...prev, { sender: 'You', text, isSelf: true }]);
+    wsTransport.sendChat(text);
     setChatInputText('');
-
-    transportRef.current?.sendChat(text);
-
-    // Occasional simulated friendly bot reply
-    if (Math.random() > 0.4 && activeRoom) {
-      setTimeout(() => {
-        const replies = ['Game na!', 'Good luck!', 'Laban lang! 🃏', 'Nice! Tara laro!'];
-        const randomOpp = Math.random() > 0.5 ? activeRoom.opp1.name : activeRoom.opp2.name;
-        const randomReply = replies[Math.floor(Math.random() * replies.length)];
-        setChatMessages((prev) => [...prev, { sender: randomOpp, text: randomReply }]);
-      }, 1200);
-    }
   };
 
   // Action: Copy Code
   const handleCopyCode = () => {
-    if (!activeRoom) return;
-    navigator.clipboard.writeText(activeRoom.code);
+    if (!serverRoom) return;
+    navigator.clipboard.writeText(serverRoom.code);
     setCopiedCode(true);
     soundManager.playButtonClick();
     setTimeout(() => setCopiedCode(false), 2000);
   };
 
-  // Action: Launch Match
-  const handleStartMatch = () => {
-    if (!activeRoom) return;
-    soundManager.playMeld();
-    onJoinTable({
-      tableName: activeRoom.name,
-      ante: activeRoom.ante,
-      roomCode: activeRoom.code,
-      ping: activeRoom.ping,
-      playerName: 'You',
-      playerAvatar: 'avatar-1',
-      opponent1: activeRoom.opp1,
-      opponent2: activeRoom.opp2,
-    });
+  // Action: Toggle Ready
+  const handleToggleReady = () => {
+    soundManager.playButtonClick();
+    wsTransport.toggleReady();
   };
+
+  // Action: Fill Bots
+  const handleFillBots = () => {
+    soundManager.playButtonClick();
+    wsTransport.fillBots();
+  };
+
+  // Action: Start Game
+  const handleStartGame = () => {
+    soundManager.playButtonClick();
+    wsTransport.startGame();
+  };
+
+  // Action: Leave Waiting Room
+  const handleLeaveRoom = () => {
+    soundManager.playButtonClick();
+    wsTransport.leaveRoom();
+    setCurrentView('LOBBY');
+  };
+
+  // Identify my status in waiting room
+  const myPlayer = serverRoom?.players.find((p) => p.id === myPlayerId);
+  const isHost = serverRoom?.hostId === myPlayerId;
+  const canStart =
+    isHost &&
+    serverRoom?.players.length === 3 &&
+    serverRoom.players.every((p) => p.isReady);
 
   return (
     <div
@@ -349,11 +369,11 @@ export const MultiplayerScreen: React.FC<MultiplayerScreenProps> = ({ onBack, on
       <div
         style={{
           width: '100%',
-          maxWidth: 820,
+          maxWidth: 860,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          marginBottom: 14,
+          marginBottom: 12,
           zIndex: 20,
         }}
       >
@@ -362,7 +382,7 @@ export const MultiplayerScreen: React.FC<MultiplayerScreenProps> = ({ onBack, on
           onClick={() => {
             soundManager.playButtonClick();
             if (currentView === 'WAITING_ROOM') {
-              setCurrentView('LOBBY');
+              handleLeaveRoom();
             } else {
               onBack();
             }
@@ -370,16 +390,17 @@ export const MultiplayerScreen: React.FC<MultiplayerScreenProps> = ({ onBack, on
           style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', fontSize: 12 }}
         >
           <ArrowLeft size={16} />
-          <span>{currentView === 'WAITING_ROOM' ? 'LEAVE TABLE' : 'BACK TO MENU'}</span>
+          <span>{currentView === 'WAITING_ROOM' ? 'LEAVE ROOM' : 'BACK TO MENU'}</span>
         </button>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <Globe size={20} color="#fbbf24" />
           <h2 className="gold-gradient-text" style={{ fontFamily: 'var(--font-serif)', fontSize: 22, margin: 0 }}>
-            {currentView === 'WAITING_ROOM' ? 'TABLE LOBBY' : 'ONLINE MULTIPLAYER'}
+            {currentView === 'WAITING_ROOM' ? 'LIVE WAITING ROOM' : 'ONLINE MULTIPLAYER'}
           </h2>
         </div>
 
+        {/* Server Status Badge */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div
             style={{
@@ -388,22 +409,61 @@ export const MultiplayerScreen: React.FC<MultiplayerScreenProps> = ({ onBack, on
               gap: 6,
               padding: '6px 12px',
               borderRadius: 20,
-              background: 'rgba(16, 185, 129, 0.15)',
-              border: '1px solid rgba(16, 185, 129, 0.4)',
+              background: isConnected ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+              border: isConnected
+                ? '1px solid rgba(16, 185, 129, 0.4)'
+                : '1px solid rgba(239, 68, 68, 0.4)',
               fontSize: 11,
               fontWeight: 800,
-              color: '#10b981',
+              color: isConnected ? '#10b981' : '#ef4444',
             }}
           >
-            <div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#10b981', boxShadow: '0 0 8px #10b981' }} />
-            <span>ONLINE LOBBY</span>
+            <div
+              style={{
+                width: 8,
+                height: 8,
+                borderRadius: '50%',
+                backgroundColor: isConnected ? '#10b981' : '#ef4444',
+                boxShadow: isConnected ? '0 0 8px #10b981' : '0 0 8px #ef4444',
+              }}
+            />
+            <span>{isConnected ? 'SERVER ONLINE' : 'RECONNECTING...'}</span>
           </div>
         </div>
       </div>
 
+      {/* Error Banner Alert */}
+      <AnimatePresence>
+        {errorMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            style={{
+              width: '100%',
+              maxWidth: 860,
+              padding: '10px 16px',
+              marginBottom: 10,
+              borderRadius: 12,
+              background: 'rgba(239, 68, 68, 0.2)',
+              border: '1px solid rgba(239, 68, 68, 0.5)',
+              color: '#fca5a5',
+              fontSize: 13,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              zIndex: 30,
+            }}
+          >
+            <AlertCircle size={16} color="#ef4444" />
+            <span>{errorMessage}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Main Content Area */}
-      <div style={{ width: '100%', maxWidth: 820, flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-        {currentView === 'LOBBY' ? (
+      <div style={{ width: '100%', maxWidth: 860, flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+        {currentView === 'LOBBY' || !serverRoom ? (
           /* ==================== LOBBY BROWSER VIEW ==================== */
           <motion.div
             className="glass-panel"
@@ -479,7 +539,8 @@ export const MultiplayerScreen: React.FC<MultiplayerScreenProps> = ({ onBack, on
               >
                 <input
                   type="text"
-                  placeholder="Enter Code (e.g. MNL-99)"
+                  maxLength={6}
+                  placeholder="Enter 6-Digit Code"
                   value={roomCodeInput}
                   onChange={(e) => setRoomCodeInput(e.target.value.toUpperCase())}
                   style={{
@@ -490,16 +551,18 @@ export const MultiplayerScreen: React.FC<MultiplayerScreenProps> = ({ onBack, on
                     background: 'rgba(255, 255, 255, 0.08)',
                     border: '1px solid rgba(255, 255, 255, 0.15)',
                     color: '#ffffff',
-                    fontSize: 12,
+                    fontSize: 13,
                     fontWeight: 700,
+                    letterSpacing: 1,
                     outline: 'none',
                     minHeight: 42,
+                    textTransform: 'uppercase',
                   }}
                 />
                 <button
                   type="submit"
                   className="action-btn secondary"
-                  style={{ padding: '0 14px', height: '100%', minHeight: 42, fontSize: 12 }}
+                  style={{ padding: '0 14px', height: '100%', minHeight: 42, fontSize: 12, fontWeight: 800 }}
                 >
                   JOIN
                 </button>
@@ -534,7 +597,7 @@ export const MultiplayerScreen: React.FC<MultiplayerScreenProps> = ({ onBack, on
                 ))}
               </div>
               <span style={{ fontSize: 12, color: 'rgba(255, 255, 255, 0.5)' }}>
-                {filteredRooms.length} Active Tables
+                {filteredRooms.length} Tables Available
               </span>
             </div>
 
@@ -568,7 +631,7 @@ export const MultiplayerScreen: React.FC<MultiplayerScreenProps> = ({ onBack, on
                         {room.isPrivate && <Lock size={12} color="#fbbf24" />}
                       </div>
                       <div style={{ fontSize: 11, color: 'rgba(255, 255, 255, 0.5)', marginTop: 2 }}>
-                        Host: <strong style={{ color: '#ffffff' }}>{room.host}</strong> • Code: <code style={{ color: '#fbbf24' }}>{room.code}</code>
+                        Host: <strong style={{ color: '#ffffff' }}>{room.host}</strong> • Code: <code style={{ color: '#fbbf24', letterSpacing: 0.5 }}>{room.code}</code>
                       </div>
                     </div>
                   </div>
@@ -605,314 +668,375 @@ export const MultiplayerScreen: React.FC<MultiplayerScreenProps> = ({ onBack, on
             </div>
           </motion.div>
         ) : (
-          /* ==================== WAITING ROOM / STAGING VIEW ==================== */
-          activeRoom && (
-            <motion.div
-              className="glass-panel"
+          /* ==================== LIVE WAITING ROOM VIEW ==================== */
+          <motion.div
+            className="glass-panel"
+            style={{
+              flex: 1,
+              borderRadius: 20,
+              padding: '20px 24px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 16,
+              overflowY: 'auto',
+            }}
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+          >
+            {/* Table Info Bar */}
+            <div
               style={{
-                flex: 1,
-                borderRadius: 20,
-                padding: '20px 24px',
                 display: 'flex',
-                flexDirection: 'column',
-                gap: 16,
-                overflowY: 'auto',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '12px 18px',
+                borderRadius: 14,
+                background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(16, 185, 129, 0.12) 100%)',
+                border: '1px solid rgba(245, 158, 11, 0.3)',
               }}
-              initial={{ opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
             >
-              {/* Table Info Bar */}
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '12px 18px',
-                  borderRadius: 14,
-                  background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(16, 185, 129, 0.12) 100%)',
-                  border: '1px solid rgba(245, 158, 11, 0.3)',
-                }}
-              >
-                <div>
-                  <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: '#fbbf24' }}>
-                    {activeRoom.name}
-                  </h3>
-                  <div style={{ fontSize: 12, color: 'rgba(255, 255, 255, 0.6)', marginTop: 2 }}>
-                    Ante: <strong style={{ color: '#ffffff' }}>{activeRoom.ante} Chips</strong> • Starting Side Pot: <strong style={{ color: '#fbbf24' }}>{activeRoom.ante * 3} Chips</strong>
-                  </div>
+              <div>
+                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: '#fbbf24' }}>
+                  {serverRoom.name}
+                </h3>
+                <div style={{ fontSize: 12, color: 'rgba(255, 255, 255, 0.6)', marginTop: 2 }}>
+                  Ante: <strong style={{ color: '#ffffff' }}>{serverRoom.ante} Chips</strong> • Starting Side Pot: <strong style={{ color: '#fbbf24' }}>{serverRoom.ante * 3} Chips</strong>
                 </div>
+              </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <button
-                    onClick={handleCopyCode}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <button
+                  onClick={handleCopyCode}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    background: 'rgba(255, 255, 255, 0.08)',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    padding: '6px 12px',
+                    borderRadius: 8,
+                    color: '#ffffff',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {copiedCode ? <Check size={14} color="#10b981" /> : <Copy size={14} />}
+                  <span>{copiedCode ? 'COPIED!' : `ROOM CODE: ${serverRoom.code}`}</span>
+                </button>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#10b981', fontSize: 12, fontWeight: 700 }}>
+                  <Wifi size={14} />
+                  <span>18ms</span>
+                </div>
+              </div>
+            </div>
+
+            {/* 3 Real-time Seats Podiums */}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(3, 1fr)',
+                gap: 'clamp(6px, 1.5vw, 14px)',
+                padding: '6px 0',
+              }}
+            >
+              {[0, 1, 2].map((seatIndex) => {
+                const player = serverRoom.players[seatIndex];
+                const isMe = player?.id === myPlayerId;
+
+                if (player) {
+                  return (
+                    <div
+                      key={player.id}
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: 'clamp(10px, 1.8vh, 18px) clamp(4px, 1.2vw, 12px)',
+                        borderRadius: 16,
+                        background: isMe ? 'rgba(245, 158, 11, 0.08)' : 'rgba(255, 255, 255, 0.03)',
+                        border: isMe ? '1px solid rgba(245, 158, 11, 0.5)' : '1px solid rgba(255, 255, 255, 0.1)',
+                        gap: 8,
+                        boxShadow: isMe ? '0 0 16px rgba(245, 158, 11, 0.15)' : 'none',
+                      }}
+                    >
+                      <PlayerAvatar
+                        avatarId={player.avatar}
+                        size="clamp(42px, 8.5vw, 60px)"
+                        name={player.name}
+                        status={player.isReady ? 'YOUR_TURN' : 'IDLE'}
+                      />
+                      <div style={{ textAlign: 'center' }}>
+                        <div
+                          style={{
+                            fontWeight: 800,
+                            fontSize: 'clamp(11px, 2.4vw, 14px)',
+                            color: isMe ? '#fbbf24' : '#f3f4f6',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            maxWidth: '100%',
+                          }}
+                        >
+                          {player.name} {isMe && '(You)'}
+                        </div>
+                        <div style={{ fontSize: 9, color: player.isHost ? '#fbbf24' : player.isBot ? '#38bdf8' : '#9ca3af', fontWeight: 800, textTransform: 'uppercase' }}>
+                          {player.isHost ? 'HOST' : player.isBot ? 'AI BOT' : 'PLAYER'}
+                        </div>
+                      </div>
+
+                      {/* Ready Toggle or Badge */}
+                      {isMe ? (
+                        <button
+                          onClick={handleToggleReady}
+                          style={{
+                            padding: '4px 12px',
+                            borderRadius: 10,
+                            background: player.isReady ? '#10b981' : 'rgba(245, 158, 11, 0.2)',
+                            color: '#ffffff',
+                            fontSize: 10,
+                            fontWeight: 800,
+                            border: player.isReady ? 'none' : '1px solid #fbbf24',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          {player.isReady ? 'READY ✔' : 'TAP READY'}
+                        </button>
+                      ) : (
+                        <div
+                          style={{
+                            padding: '3px 8px',
+                            borderRadius: 10,
+                            background: player.isReady ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255, 255, 255, 0.08)',
+                            color: player.isReady ? '#10b981' : 'rgba(255, 255, 255, 0.5)',
+                            fontSize: 10,
+                            fontWeight: 800,
+                          }}
+                        >
+                          {player.isReady ? 'READY ✔' : 'WAITING...'}
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+
+                // Empty Seat Slot
+                return (
+                  <div
+                    key={`empty-${seatIndex}`}
                     style={{
                       display: 'flex',
+                      flexDirection: 'column',
                       alignItems: 'center',
-                      gap: 6,
-                      background: 'rgba(255, 255, 255, 0.08)',
-                      border: '1px solid rgba(255, 255, 255, 0.2)',
-                      padding: '6px 12px',
-                      borderRadius: 8,
-                      color: '#ffffff',
-                      fontSize: 12,
-                      fontWeight: 700,
-                      cursor: 'pointer',
+                      justifyContent: 'center',
+                      padding: 'clamp(10px, 1.8vh, 18px) clamp(4px, 1.2vw, 12px)',
+                      borderRadius: 16,
+                      background: 'rgba(255, 255, 255, 0.02)',
+                      border: '1px dashed rgba(255, 255, 255, 0.15)',
+                      gap: 8,
+                      minHeight: 140,
                     }}
                   >
-                    {copiedCode ? <Check size={14} color="#10b981" /> : <Copy size={14} />}
-                    <span>{copiedCode ? 'COPIED!' : `CODE: ${activeRoom.code}`}</span>
-                  </button>
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#10b981', fontSize: 12, fontWeight: 700 }}>
-                    <Wifi size={14} />
-                    <span>{activeRoom.ping}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* 3 Seats Podiums */}
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(3, 1fr)',
-                  gap: 'clamp(6px, 1.5vw, 14px)',
-                  padding: '6px 0',
-                }}
-              >
-                {/* Seat 1: Host */}
-                <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: 'clamp(10px, 1.8vh, 18px) clamp(4px, 1.2vw, 12px)',
-                    borderRadius: 16,
-                    background: 'rgba(255, 255, 255, 0.03)',
-                    border: '1px solid rgba(245, 158, 11, 0.25)',
-                    gap: 8,
-                  }}
-                >
-                  <PlayerAvatar avatarId={activeRoom.hostAvatar} size="clamp(42px, 8.5vw, 60px)" name={activeRoom.host} />
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontWeight: 800, fontSize: 'clamp(11px, 2.4vw, 14px)', color: '#f3f4f6', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>{activeRoom.host}</div>
-                    <div style={{ fontSize: 9, color: '#fbbf24', fontWeight: 800, textTransform: 'uppercase' }}>
-                      HOST
-                    </div>
-                  </div>
-                  <div
-                    style={{
-                      padding: '3px 8px',
-                      borderRadius: 10,
-                      background: 'rgba(16, 185, 129, 0.2)',
-                      color: '#10b981',
-                      fontSize: 10,
-                      fontWeight: 800,
-                    }}
-                  >
-                    READY ✔
-                  </div>
-                </div>
-
-                {/* Seat 2: You */}
-                <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: 'clamp(10px, 1.8vh, 18px) clamp(4px, 1.2vw, 12px)',
-                    borderRadius: 16,
-                    background: 'rgba(245, 158, 11, 0.08)',
-                    border: '1px solid rgba(245, 158, 11, 0.5)',
-                    gap: 8,
-                    boxShadow: '0 0 16px rgba(245, 158, 11, 0.15)',
-                  }}
-                >
-                  <PlayerAvatar avatarId="avatar-1" size="clamp(42px, 8.5vw, 60px)" name="You" status={isReady ? 'YOUR_TURN' : 'IDLE'} />
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontWeight: 800, fontSize: 'clamp(11px, 2.4vw, 14px)', color: '#fbbf24' }}>You</div>
-                    <div style={{ fontSize: 9, color: '#9ca3af', fontWeight: 700 }}>100 Chips</div>
-                  </div>
-                  <button
-                    onClick={() => {
-                      soundManager.playButtonClick();
-                      setIsReady((prev) => !prev);
-                    }}
-                    style={{
-                      padding: '3px 10px',
-                      borderRadius: 10,
-                      background: isReady ? '#10b981' : 'rgba(255, 255, 255, 0.1)',
-                      color: '#ffffff',
-                      fontSize: 10,
-                      fontWeight: 800,
-                      border: 'none',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {isReady ? 'READY ✔' : 'TAP READY'}
-                  </button>
-                </div>
-
-                {/* Seat 3: Opponent 2 */}
-                <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: 'clamp(10px, 1.8vh, 18px) clamp(4px, 1.2vw, 12px)',
-                    borderRadius: 16,
-                    background: 'rgba(255, 255, 255, 0.03)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    gap: 8,
-                  }}
-                >
-                  <PlayerAvatar avatarId={activeRoom.opp2.avatar} size="clamp(42px, 8.5vw, 60px)" name={activeRoom.opp2.name} />
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontWeight: 800, fontSize: 'clamp(11px, 2.4vw, 14px)', color: '#f3f4f6', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>{activeRoom.opp2.name}</div>
-                    <div style={{ fontSize: 9, color: '#9ca3af', fontWeight: 700 }}>Challenger</div>
-                  </div>
-                  <div
-                    style={{
-                      padding: '3px 8px',
-                      borderRadius: 10,
-                      background: 'rgba(16, 185, 129, 0.2)',
-                      color: '#10b981',
-                      fontSize: 10,
-                      fontWeight: 800,
-                    }}
-                  >
-                    READY ✔
-                  </div>
-                </div>
-              </div>
-
-              {/* Waiting Room Chat & Reactions */}
-              <div
-                style={{
-                  flex: 1,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  borderRadius: 14,
-                  background: 'rgba(0, 0, 0, 0.3)',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
-                  padding: 12,
-                  minHeight: 140,
-                }}
-              >
-                {/* Messages list */}
-                <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 6, paddingRight: 4 }}>
-                  {chatMessages.map((msg, idx) => (
                     <div
-                      key={idx}
                       style={{
-                        alignSelf: msg.isSelf ? 'flex-end' : 'flex-start',
-                        maxWidth: '80%',
-                        padding: '6px 12px',
-                        borderRadius: 10,
-                        background: msg.isSelf ? 'rgba(245, 158, 11, 0.25)' : 'rgba(255, 255, 255, 0.08)',
-                        border: msg.isSelf ? '1px solid rgba(245, 158, 11, 0.4)' : '1px solid rgba(255, 255, 255, 0.06)',
-                        fontSize: 12,
-                        color: '#f3f4f6',
+                        width: 'clamp(42px, 8.5vw, 60px)',
+                        height: 'clamp(42px, 8.5vw, 60px)',
+                        borderRadius: '50%',
+                        border: '2px dashed rgba(255, 255, 255, 0.2)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'rgba(255, 255, 255, 0.3)',
                       }}
                     >
-                      <strong style={{ color: msg.isSelf ? '#fbbf24' : '#60a5fa', marginRight: 6 }}>
-                        {msg.sender}:
-                      </strong>
-                      <span>{msg.text}</span>
+                      <Users size={22} />
                     </div>
-                  ))}
-                  <div ref={chatEndRef} />
-                </div>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontWeight: 700, fontSize: 12, color: 'rgba(255, 255, 255, 0.4)' }}>
+                        Empty Seat
+                      </div>
+                    </div>
 
-                {/* Quick Chat Chips */}
-                <div style={{ display: 'flex', gap: 6, overflowX: 'auto', padding: '8px 0' }}>
-                  {['Game na! 🔥', 'Good luck! 🃏', 'Tongits master here! 😎', 'All in! 💰', 'Tara laro!'].map((msg) => (
-                    <button
-                      key={msg}
-                      onClick={() => handleSendChat(msg)}
-                      style={{
-                        padding: '4px 10px',
-                        borderRadius: 8,
-                        background: 'rgba(255, 255, 255, 0.06)',
-                        border: '1px solid rgba(255, 255, 255, 0.12)',
-                        color: '#e2e8f0',
-                        fontSize: 11,
-                        whiteSpace: 'nowrap',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      {msg}
-                    </button>
-                  ))}
-                </div>
+                    {isHost ? (
+                      <button
+                        onClick={handleFillBots}
+                        className="action-btn secondary"
+                        style={{
+                          padding: '4px 10px',
+                          fontSize: 10,
+                          fontWeight: 800,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 4,
+                          borderColor: 'rgba(245, 158, 11, 0.4)',
+                          color: '#fbbf24',
+                        }}
+                      >
+                        <UserPlus size={12} />
+                        <span>ADD BOT</span>
+                      </button>
+                    ) : (
+                      <div style={{ fontSize: 10, color: 'rgba(255, 255, 255, 0.3)' }}>
+                        Waiting...
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
 
-                {/* Chat input */}
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <input
-                    type="text"
-                    placeholder="Type message to table..."
-                    value={chatInputText}
-                    onChange={(e) => setChatInputText(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSendChat()}
+            {/* Waiting Room Real-time Chat */}
+            <div
+              style={{
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                borderRadius: 14,
+                background: 'rgba(0, 0, 0, 0.3)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                padding: 12,
+                minHeight: 140,
+              }}
+            >
+              {/* Messages list */}
+              <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 6, paddingRight: 4 }}>
+                {chatMessages.map((msg, idx) => (
+                  <div
+                    key={idx}
                     style={{
-                      flex: 1,
-                      padding: '8px 12px',
+                      alignSelf: msg.isSelf ? 'flex-end' : 'flex-start',
+                      maxWidth: '80%',
+                      padding: '6px 12px',
+                      borderRadius: 10,
+                      background: msg.isSelf ? 'rgba(245, 158, 11, 0.25)' : 'rgba(255, 255, 255, 0.08)',
+                      border: msg.isSelf ? '1px solid rgba(245, 158, 11, 0.4)' : '1px solid rgba(255, 255, 255, 0.06)',
+                      fontSize: 12,
+                      color: '#f3f4f6',
+                    }}
+                  >
+                    <strong style={{ color: msg.isSelf ? '#fbbf24' : '#60a5fa', marginRight: 6 }}>
+                      {msg.sender}:
+                    </strong>
+                    <span>{msg.text}</span>
+                  </div>
+                ))}
+                <div ref={chatEndRef} />
+              </div>
+
+              {/* Quick Chat Chips */}
+              <div style={{ display: 'flex', gap: 6, overflowX: 'auto', padding: '8px 0' }}>
+                {['Game na! 🔥', 'Good luck! 🃏', 'Tongits master here! 😎', 'All in! 💰', 'Tara laro!'].map((msg) => (
+                  <button
+                    key={msg}
+                    onClick={() => handleSendChat(msg)}
+                    style={{
+                      padding: '4px 10px',
                       borderRadius: 8,
                       background: 'rgba(255, 255, 255, 0.06)',
-                      border: '1px solid rgba(255, 255, 255, 0.15)',
-                      color: '#ffffff',
-                      fontSize: 12,
-                      outline: 'none',
+                      border: '1px solid rgba(255, 255, 255, 0.12)',
+                      color: '#e2e8f0',
+                      fontSize: 11,
+                      whiteSpace: 'nowrap',
+                      cursor: 'pointer',
                     }}
-                  />
-                  <button
-                    onClick={() => handleSendChat()}
-                    className="action-btn secondary"
-                    style={{ padding: '8px 14px', fontSize: 12, display: 'flex', alignItems: 'center', gap: 4 }}
                   >
-                    <Send size={13} />
-                    <span>SEND</span>
+                    {msg}
                   </button>
-                </div>
+                ))}
               </div>
 
-              {/* Start Match Action Button */}
-              <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', alignItems: 'center' }}>
-                <button
-                  className="action-btn secondary"
-                  onClick={() => {
-                    soundManager.playButtonClick();
-                    setCurrentView('LOBBY');
-                  }}
-                  style={{ padding: '10px 20px', fontSize: 13 }}
-                >
-                  LEAVE TABLE
-                </button>
-
-                <button
-                  className="action-btn primary"
-                  disabled={!isReady}
-                  onClick={handleStartMatch}
+              {/* Chat input */}
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input
+                  type="text"
+                  placeholder="Type message to table..."
+                  value={chatInputText}
+                  onChange={(e) => setChatInputText(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSendChat()}
                   style={{
-                    padding: '12px 28px',
-                    fontSize: 15,
-                    fontWeight: 800,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    boxShadow: '0 0 24px rgba(245, 158, 11, 0.5)',
-                    opacity: isReady ? 1 : 0.6,
-                    cursor: isReady ? 'pointer' : 'not-allowed',
+                    flex: 1,
+                    padding: '8px 12px',
+                    borderRadius: 8,
+                    background: 'rgba(255, 255, 255, 0.06)',
+                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    color: '#ffffff',
+                    fontSize: 12,
+                    outline: 'none',
                   }}
+                />
+                <button
+                  onClick={() => handleSendChat()}
+                  className="action-btn secondary"
+                  style={{ padding: '8px 14px', fontSize: 12, display: 'flex', alignItems: 'center', gap: 4 }}
                 >
-                  <Play size={16} fill="#05110d" />
-                  <span>START MATCH NOW</span>
+                  <Send size={13} />
+                  <span>SEND</span>
                 </button>
               </div>
-            </motion.div>
-          )
+            </div>
+
+            {/* Start Match / Waiting Bar */}
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' }}>
+              <button
+                className="action-btn secondary"
+                onClick={handleLeaveRoom}
+                style={{ padding: '10px 20px', fontSize: 13 }}
+              >
+                LEAVE ROOM
+              </button>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                {isHost && serverRoom.players.length < 3 && (
+                  <button
+                    className="action-btn secondary"
+                    onClick={handleFillBots}
+                    style={{ padding: '10px 16px', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}
+                  >
+                    <UserPlus size={16} />
+                    <span>FILL WITH BOTS</span>
+                  </button>
+                )}
+
+                {isHost ? (
+                  <button
+                    className="action-btn primary"
+                    disabled={!canStart}
+                    onClick={handleStartGame}
+                    style={{
+                      padding: '12px 28px',
+                      fontSize: 15,
+                      fontWeight: 800,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      boxShadow: canStart ? '0 0 24px rgba(245, 158, 11, 0.5)' : 'none',
+                      opacity: canStart ? 1 : 0.5,
+                      cursor: canStart ? 'pointer' : 'not-allowed',
+                    }}
+                  >
+                    <Play size={16} fill="#05110d" />
+                    <span>START MATCH NOW</span>
+                  </button>
+                ) : (
+                  <div
+                    style={{
+                      padding: '10px 18px',
+                      borderRadius: 12,
+                      background: 'rgba(245, 158, 11, 0.1)',
+                      border: '1px solid rgba(245, 158, 11, 0.3)',
+                      color: '#fbbf24',
+                      fontSize: 13,
+                      fontWeight: 700,
+                    }}
+                  >
+                    WAITING FOR HOST TO START MATCH...
+                  </div>
+                )}
+              </div>
+            </div>
+          </motion.div>
         )}
       </div>
 
@@ -956,11 +1080,10 @@ export const MultiplayerScreen: React.FC<MultiplayerScreenProps> = ({ onBack, on
               onClick={(e) => e.stopPropagation()}
             >
               <h3 className="gold-gradient-text" style={{ margin: 0, fontSize: 20, fontFamily: 'var(--font-serif)' }}>
-                CREATE CUSTOM TABLE
+                CREATE MULTIPLAYER TABLE
               </h3>
 
               <form onSubmit={handleCreateTableSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                {/* Table Name */}
                 <div>
                   <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#e2e8f0', marginBottom: 6 }}>
                     Table Name
@@ -984,7 +1107,6 @@ export const MultiplayerScreen: React.FC<MultiplayerScreenProps> = ({ onBack, on
                   />
                 </div>
 
-                {/* Ante Stakes Selection */}
                 <div>
                   <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#e2e8f0', marginBottom: 8 }}>
                     Ante Stakes (Chips per round)
@@ -1015,11 +1137,10 @@ export const MultiplayerScreen: React.FC<MultiplayerScreenProps> = ({ onBack, on
                   </div>
                 </div>
 
-                {/* Private Room Toggle */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <Lock size={16} color="#fbbf24" />
-                    <span style={{ fontSize: 13, color: '#f3f4f6', fontWeight: 600 }}>Private Match with Code</span>
+                    <span style={{ fontSize: 13, color: '#f3f4f6', fontWeight: 600 }}>Private Match with Room Code</span>
                   </div>
                   <input
                     type="checkbox"
@@ -1029,7 +1150,6 @@ export const MultiplayerScreen: React.FC<MultiplayerScreenProps> = ({ onBack, on
                   />
                 </div>
 
-                {/* Actions */}
                 <div style={{ display: 'flex', gap: 10, marginTop: 8, justifyContent: 'flex-end' }}>
                   <button
                     type="button"
@@ -1092,7 +1212,6 @@ export const MultiplayerScreen: React.FC<MultiplayerScreenProps> = ({ onBack, on
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.85, opacity: 0 }}
             >
-              {/* Radar Icon / Pulse */}
               <div style={{ position: 'relative', width: 90, height: 90, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <motion.div
                   style={{
@@ -1127,8 +1246,8 @@ export const MultiplayerScreen: React.FC<MultiplayerScreenProps> = ({ onBack, on
                 </h3>
                 <p style={{ fontSize: 13, color: 'rgba(255, 255, 255, 0.7)', marginTop: 6, margin: 0 }}>
                   {quickMatchStatus === 'SEARCHING'
-                    ? 'Connecting to active players in the Manila & Cebu region...'
-                    : 'Joining room with matched opponents!'}
+                    ? 'Connecting to live tables on the server...'
+                    : 'Joining active room with matched opponents!'}
                 </p>
               </div>
 

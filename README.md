@@ -166,17 +166,39 @@ npm run build
 
 ---
 
-## 🌐 Production Deployment (Hostinger VPS with Caddy)
+## 🌐 Real-Time Multiplayer Backend & Deployment (Hostinger VPS with Caddy)
 
-Tong-Its is a static Single Page Application (SPA). To deploy it onto a **Hostinger VPS** using the high-performance **Caddy** web server with **automatic HTTPS (SSL)**:
+Tong-Its includes both a high-performance static frontend and an **authoritative Node.js WebSocket backend** (`server/index.ts`) supporting live 3-player rooms, 6-character room codes, anti-cheat card masking, and hybrid human/AI matchmaking.
 
-### 1. Connect to VPS
+---
+
+### Local Development (Frontend + Backend)
+
+To test multiplayer locally across multiple browser tabs:
+
+1. In Terminal 1, run the WebSocket server:
+   ```bash
+   npm run server
+   ```
+   *Runs on `ws://localhost:3001/ws`.*
+
+2. In Terminal 2, run the Vite development server:
+   ```bash
+   npm run dev
+   ```
+   *The Vite dev server automatically proxies `/ws` requests to `ws://localhost:3001`.*
+
+3. Open `http://localhost:5173` in two different browser windows or incognito sessions to create and join rooms with real players!
+
+---
+
+### Production Deployment (Hostinger VPS with Caddy)
+
+#### 1. Connect to VPS & Install Prerequisites
 ```bash
 ssh root@YOUR_VPS_IP
-```
 
-### 2. Install Caddy & Node.js
-```bash
+# Update packages and install Caddy + Node.js LTS
 apt update && apt upgrade -y
 apt install -y debian-keyring debian-archive-keyring apt-transport-https curl git
 
@@ -185,12 +207,12 @@ curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --dearmo
 curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | tee /etc/apt/sources.list.d/caddy-stable.list
 apt update && apt install -y caddy
 
-# Install Node.js LTS
+# Install Node.js 22 LTS
 curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
 apt install -y nodejs
 ```
 
-### 3. Clone and Build Project
+#### 2. Clone Repository & Build Frontend
 ```bash
 mkdir -p /var/www/tongits
 cd /var/www/tongits
@@ -200,19 +222,105 @@ npm run build
 chown -R caddy:caddy /var/www/tongits/dist
 ```
 
-### 4. Configure `/etc/caddy/Caddyfile`
+#### 3. Run WebSocket Backend (Choose PM2 or Systemd)
+
+##### Option A: Using PM2 (Recommended for Easy Process Management & Logs)
+
+1. Install PM2 globally:
+   ```bash
+   npm install -g pm2
+   ```
+
+2. Start the WebSocket server using the included `ecosystem.config.cjs`:
+   ```bash
+   cd /var/www/tongits
+   pm2 start ecosystem.config.cjs
+   ```
+   *(Alternatively, run via npm: `pm2 start npm --name "tongits-server" -- run server`)*
+
+3. Configure PM2 to restart automatically on server reboots:
+   ```bash
+   pm2 startup
+   # (Copy-paste the sudo command output by the above line, then run:)
+   pm2 save
+   ```
+
+4. Useful PM2 commands:
+   ```bash
+   pm2 status               # Check server status
+   pm2 logs tongits-server  # View live real-time logs
+   pm2 restart tongits-server
+   pm2 stop tongits-server
+   ```
+
+---
+
+##### Option B: Using Systemd Service
+
+Create the systemd service file:
+```bash
+nano /etc/systemd/system/tongits-server.service
+```
+
+Paste the following configuration:
+```ini
+[Unit]
+Description=Tong-Its Real-Time WebSocket Game Server
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/var/www/tongits
+ExecStart=/usr/bin/npm run server
+Restart=always
+RestartSec=5
+Environment=NODE_ENV=production
+Environment=PORT=3001
+Environment=HOST=127.0.0.1
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Enable and start the service:
+```bash
+chown -R www-data:www-data /var/www/tongits
+systemctl daemon-reload
+systemctl enable tongits-server
+systemctl start tongits-server
+systemctl status tongits-server
+```
+
+#### 4. Configure `/etc/caddy/Caddyfile`
+Caddy handles automatic HTTPS (SSL) and routes WebSocket traffic to port 3001 while serving frontend static files:
+
 ```caddyfile
 tongits.yourdomain.com {
-    root * /var/www/tongits/dist
-    encode gzip zstd
-    try_files {path} /index.html
-    file_server
+    # 1. Reverse proxy WebSocket connections & health check to Node.js backend
+    handle /ws* {
+        reverse_proxy 127.0.0.1:3001
+    }
 
+    handle /health {
+        reverse_proxy 127.0.0.1:3001
+    }
+
+    # 2. Serve static React single-page application
+    handle {
+        root * /var/www/tongits/dist
+        encode gzip zstd
+        try_files {path} /index.html
+        file_server
+    }
+
+    # 3. Cache static assets for high performance
     @static {
         path /assets/* /cards/* /avatars/* *.ico *.svg *.webp *.jpg *.png
     }
     header @static Cache-Control "public, max-age=2592000, immutable"
 
+    # Security headers
     header {
         X-Content-Type-Options nosniff
         X-Frame-Options DENY
@@ -221,12 +329,12 @@ tongits.yourdomain.com {
 }
 ```
 
-### 5. Restart Caddy
+#### 5. Reload Caddy
 ```bash
 systemctl restart caddy
 systemctl enable caddy
 ```
-*Caddy will automatically provision and maintain an SSL certificate via Let's Encrypt for your domain.*
+*Caddy will automatically generate and renew Let's Encrypt SSL certificates for your domain.*
 
 ---
 

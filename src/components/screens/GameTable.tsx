@@ -38,6 +38,7 @@ import { ArrowLeft, Volume2, VolumeX, Coins, Sparkles, Globe, Wifi, MessageSquar
 import { motion, AnimatePresence } from 'framer-motion';
 import { soundManager } from '../../audio/soundEffects';
 import '../../styles/table.css';
+import { wsTransport } from '../../game/network/websocketTransport';
 
 interface GameTableProps {
   gameConfig: {
@@ -46,6 +47,8 @@ interface GameTableProps {
     bot1: BotProfile;
     bot2: BotProfile;
     isMultiplayer?: boolean;
+    isServerMultiplayer?: boolean;
+    serverPlayerId?: string;
     tableName?: string;
     ante?: number;
     roomCode?: string;
@@ -82,6 +85,56 @@ export const GameTable: React.FC<GameTableProps> = ({ gameConfig, onExit }) => {
   const [showChatMenu, setShowChatMenu] = useState(false);
   const [activeChatBubble, setActiveChatBubble] = useState<{ sender: string; message: string } | null>(null);
 
+  const humanPlayerId =
+    gameConfig.isServerMultiplayer && gameConfig.serverPlayerId
+      ? gameConfig.serverPlayerId
+      : 'player-human';
+
+  const humanPlayer = gameState.players.find((p) => p.id === humanPlayerId) || gameState.players[0];
+  const opponents = gameState.players.filter((p) => p.id !== humanPlayer.id);
+  const bot1 = opponents[0] || gameState.players[1] || gameState.players[0];
+  const bot2 = opponents[1] || gameState.players[2] || gameState.players[0];
+
+  const isHumanTurn = gameState.currentPlayerId === humanPlayer.id;
+
+  const showNotification = useCallback((text: string, type: 'primary' | 'gold' | 'danger' | 'special' = 'gold', duration = 1800) => {
+    notificationCountRef.current += 1;
+    const currentId = notificationCountRef.current;
+    setActionNotification({ id: currentId, text, type });
+    setTimeout(() => {
+      setActionNotification((cur) => (cur?.id === currentId ? null : cur));
+    }, duration);
+  }, []);
+
+  // Server state sync & chat subscriptions
+  useEffect(() => {
+    if (!gameConfig.isServerMultiplayer) return;
+
+    const unsubState = wsTransport.subscribeToState((serverState) => {
+      setGameState(serverState);
+    });
+
+    const unsubChat = wsTransport.subscribeToChat((chat) => {
+      setActiveChatBubble({ sender: chat.senderName, message: chat.message });
+      setTimeout(() => setActiveChatBubble(null), 3500);
+    });
+
+    const unsubError = wsTransport.subscribeToErrors((err) => {
+      showNotification(err, 'danger');
+    });
+
+    const unsubNotif = wsTransport.subscribeToNotifications((notif) => {
+      showNotification(notif.text, notif.type as any || 'gold');
+    });
+
+    return () => {
+      unsubState();
+      unsubChat();
+      unsubError();
+      unsubNotif();
+    };
+  }, [gameConfig.isServerMultiplayer, showNotification]);
+
   const QUICK_CHATS = [
     'Good luck sa lahat! 🃏',
     'Game na! 🔥',
@@ -97,8 +150,10 @@ export const GameTable: React.FC<GameTableProps> = ({ gameConfig, onExit }) => {
     setShowChatMenu(false);
     setTimeout(() => setActiveChatBubble(null), 3000);
 
-    // Simulated opponent reactions in multiplayer
-    if (gameConfig.isMultiplayer && Math.random() > 0.3) {
+    if (gameConfig.isServerMultiplayer) {
+      wsTransport.sendChat(msg);
+    } else if (gameConfig.isMultiplayer && Math.random() > 0.3) {
+      // Simulated opponent reactions in local multiplayer
       setTimeout(() => {
         const replies = ['Good luck!', 'Laban lang!', 'Nice!', 'Kaya pa yan! 🃏', 'Haha nice one!'];
         const randomOpponent = Math.random() > 0.5 ? bot1.name : bot2.name;
@@ -109,30 +164,15 @@ export const GameTable: React.FC<GameTableProps> = ({ gameConfig, onExit }) => {
     }
   };
 
-  const humanPlayer = gameState.players.find((p) => p.id === 'player-human')!;
-  const bot1 = gameState.players.find((p) => p.id === gameConfig.bot1.id)!;
-  const bot2 = gameState.players.find((p) => p.id === gameConfig.bot2.id)!;
-
-  const isHumanTurn = gameState.currentPlayerId === 'player-human';
-
-  const showNotification = useCallback((text: string, type: 'primary' | 'gold' | 'danger' | 'special' = 'gold', duration = 1800) => {
-    notificationCountRef.current += 1;
-    const currentId = notificationCountRef.current;
-    setActionNotification({ id: currentId, text, type });
-    setTimeout(() => {
-      setActionNotification((cur) => (cur?.id === currentId ? null : cur));
-    }, duration);
-  }, []);
-
   // Show banner on turn change
   useEffect(() => {
     if (gameState.phase === 'PLAYER_TURN' || gameState.phase === 'AFTER_DRAW') {
       const cur = gameState.players.find((p) => p.id === gameState.currentPlayerId);
-      if (cur?.type === 'HUMAN') {
+      if (cur?.id === humanPlayer.id) {
         showNotification('YOUR TURN', 'primary', 1400);
       }
     }
-  }, [gameState.currentPlayerId, gameState.phase, showNotification]);
+  }, [gameState.currentPlayerId, gameState.phase, humanPlayer.id, showNotification]);
 
   // Check Round End triggers
   useEffect(() => {
@@ -145,8 +185,9 @@ export const GameTable: React.FC<GameTableProps> = ({ gameConfig, onExit }) => {
     }
   }, [gameState.phase, gameState.roundResult]);
 
-  // AI Decision Engine Loop
+  // AI Decision Engine Loop (Local Solo games only - Server handles multiplayer AI authoritative execution)
   useEffect(() => {
+    if (gameConfig.isServerMultiplayer) return;
     if (gameState.phase === 'ROUND_END' || gameState.phase === 'GAME_OVER') return;
 
     const currentPlayer = gameState.players.find((p) => p.id === gameState.currentPlayerId);
@@ -154,7 +195,7 @@ export const GameTable: React.FC<GameTableProps> = ({ gameConfig, onExit }) => {
     // 1. If currently in DRAW_CALLED phase, let eligible AI opponents respond
     if (gameState.phase === 'DRAW_CALLED' && gameState.drawCallState) {
       const pendingAi = gameState.drawCallState.eligibleOpponents.find(
-        (id) => id !== 'player-human' && gameState.drawCallState!.responses[id] === 'PENDING'
+        (id) => id !== humanPlayer.id && gameState.drawCallState!.responses[id] === 'PENDING'
       );
       if (pendingAi) {
         setIsThinking(true);
@@ -209,7 +250,7 @@ export const GameTable: React.FC<GameTableProps> = ({ gameConfig, onExit }) => {
 
       return () => clearTimeout(timer);
     }
-  }, [gameState, showNotification]);
+  }, [gameState, gameConfig.isServerMultiplayer, humanPlayer.id, showNotification]);
 
   // Card Selection handlers
   const handleCardToggle = (card: Card) => {
@@ -251,34 +292,50 @@ export const GameTable: React.FC<GameTableProps> = ({ gameConfig, onExit }) => {
 
   // Action handlers
   const handleHumanDrawStock = () => {
-    try {
-      setGameState((prev) => applyDrawStock(prev, humanPlayer.id));
-      setSelectedCardIds(new Set());
-    } catch (err: any) {
-      showNotification(err.message, 'danger');
-    }
-  };
-
-  const handleHumanDrawDiscard = () => {
-    if (drawDiscardCheck.possibleMelds && drawDiscardCheck.possibleMelds.length > 0) {
-      const meldToUse = drawDiscardCheck.possibleMelds[0];
+    soundManager.playCardFlick();
+    setSelectedCardIds(new Set());
+    if (gameConfig.isServerMultiplayer) {
+      wsTransport.sendAction('DRAW_STOCK', {});
+    } else {
       try {
-        setGameState((prev) => applyDrawDiscard(prev, humanPlayer.id, meldToUse));
-        setSelectedCardIds(new Set());
-        showNotification('Discard Taken & Melded!', 'gold');
+        setGameState((prev) => applyDrawStock(prev, humanPlayer.id));
       } catch (err: any) {
         showNotification(err.message, 'danger');
       }
     }
   };
 
-  const handleHumanMeld = () => {
-    try {
-      setGameState((prev) => applyMeld(prev, humanPlayer.id, selectedCards));
+  const handleHumanDrawDiscard = () => {
+    if (drawDiscardCheck.possibleMelds && drawDiscardCheck.possibleMelds.length > 0) {
+      const meldToUse = drawDiscardCheck.possibleMelds[0];
+      soundManager.playMeld();
       setSelectedCardIds(new Set());
-      showNotification('MELD EXPOSED!', 'gold');
-    } catch (err: any) {
-      showNotification(err.message, 'danger');
+      if (gameConfig.isServerMultiplayer) {
+        wsTransport.sendAction('DRAW_DISCARD', { meldCards: meldToUse });
+      } else {
+        try {
+          setGameState((prev) => applyDrawDiscard(prev, humanPlayer.id, meldToUse));
+          showNotification('Discard Taken & Melded!', 'gold');
+        } catch (err: any) {
+          showNotification(err.message, 'danger');
+        }
+      }
+    }
+  };
+
+  const handleHumanMeld = () => {
+    soundManager.playMeld();
+    const cardsToMeld = [...selectedCards];
+    setSelectedCardIds(new Set());
+    if (gameConfig.isServerMultiplayer) {
+      wsTransport.sendAction('MELD', { cards: cardsToMeld });
+    } else {
+      try {
+        setGameState((prev) => applyMeld(prev, humanPlayer.id, cardsToMeld));
+        showNotification('MELD EXPOSED!', 'gold');
+      } catch (err: any) {
+        showNotification(err.message, 'danger');
+      }
     }
   };
 
@@ -289,51 +346,75 @@ export const GameTable: React.FC<GameTableProps> = ({ gameConfig, onExit }) => {
 
   const handleMeldClickForSapaw = (meld: Meld) => {
     if (selectedCards.length === 1 && validSapawMeldIds.has(meld.id)) {
-      try {
-        setGameState((prev) => applySapaw(prev, humanPlayer.id, selectedCards[0], meld.id));
-        setSelectedCardIds(new Set());
-        setIsSapawMode(false);
-        showNotification('SAPAW!', 'special');
-      } catch (err: any) {
-        showNotification(err.message, 'danger');
+      soundManager.playSapaw();
+      const sapawCard = selectedCards[0];
+      setSelectedCardIds(new Set());
+      setIsSapawMode(false);
+      if (gameConfig.isServerMultiplayer) {
+        wsTransport.sendAction('SAPAW', { card: sapawCard, targetMeldId: meld.id });
+      } else {
+        try {
+          setGameState((prev) => applySapaw(prev, humanPlayer.id, sapawCard, meld.id));
+          showNotification('SAPAW!', 'special');
+        } catch (err: any) {
+          showNotification(err.message, 'danger');
+        }
       }
     }
   };
 
   const handleHumanDiscard = () => {
     if (selectedCards.length === 1) {
+      soundManager.playCardSnap();
+      const discardCard = selectedCards[0];
+      setSelectedCardIds(new Set());
+      if (gameConfig.isServerMultiplayer) {
+        wsTransport.sendAction('DISCARD', { card: discardCard });
+      } else {
+        try {
+          setGameState((prev) => applyDiscard(prev, humanPlayer.id, discardCard));
+        } catch (err: any) {
+          showNotification(err.message, 'danger');
+        }
+      }
+    }
+  };
+
+  const handleHumanCallDraw = () => {
+    soundManager.playDrawCall();
+    if (gameConfig.isServerMultiplayer) {
+      wsTransport.sendAction('CALL_DRAW', {});
+    } else {
       try {
-        setGameState((prev) => applyDiscard(prev, humanPlayer.id, selectedCards[0]));
-        setSelectedCardIds(new Set());
+        setGameState((prev) => applyCallDraw(prev, humanPlayer.id));
+        showNotification('YOU CALLED DRAW!', 'danger');
       } catch (err: any) {
         showNotification(err.message, 'danger');
       }
     }
   };
 
-  const handleHumanCallDraw = () => {
-    try {
-      setGameState((prev) => applyCallDraw(prev, humanPlayer.id));
-      showNotification('YOU CALLED DRAW!', 'danger');
-    } catch (err: any) {
-      showNotification(err.message, 'danger');
-    }
-  };
-
   const handleHumanDrawResponse = (response: 'FOLD' | 'CHALLENGE') => {
-    try {
-      setGameState((prev) => applyDrawResponse(prev, humanPlayer.id, response));
-    } catch (err: any) {
-      showNotification(err.message, 'danger');
+    if (gameConfig.isServerMultiplayer) {
+      wsTransport.sendAction('RESPOND_DRAW', { response });
+    } else {
+      try {
+        setGameState((prev) => applyDrawResponse(prev, humanPlayer.id, response));
+      } catch (err: any) {
+        showNotification(err.message, 'danger');
+      }
     }
   };
 
   const handleNextRound = () => {
     setShowScoreboard(false);
     setShowVictoryModal(false);
-    // Next dealer is the winner of the completed hand
-    const nextDealerId = gameState.roundResult?.winnerId || gameState.dealerId;
-    setGameState((prev) => startNewRound(prev, nextDealerId));
+    if (gameConfig.isServerMultiplayer) {
+      wsTransport.sendAction('NEXT_ROUND', {});
+    } else {
+      const nextDealerId = gameState.roundResult?.winnerId || gameState.dealerId;
+      setGameState((prev) => startNewRound(prev, nextDealerId));
+    }
   };
 
   // Sort human cards
@@ -350,6 +431,9 @@ export const GameTable: React.FC<GameTableProps> = ({ gameConfig, onExit }) => {
               className="action-btn secondary"
               onClick={() => {
                 soundManager.playButtonClick();
+                if (gameConfig.isServerMultiplayer) {
+                  wsTransport.leaveRoom();
+                }
                 onExit();
               }}
               style={{ padding: '6px 14px', fontSize: 12 }}

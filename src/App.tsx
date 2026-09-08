@@ -24,6 +24,8 @@ export function App() {
     bot2: BotProfile;
     difficulty: AIDifficulty;
     isMultiplayer?: boolean;
+    isServerMultiplayer?: boolean;
+    serverPlayerId?: string;
     tableName?: string;
     ante?: number;
     roomCode?: string;
@@ -58,6 +60,7 @@ export function App() {
     setGameConfig({
       ...config,
       isMultiplayer: false,
+      isServerMultiplayer: false,
     });
     setIsSetupOpen(false);
     setReturnToScreen('HOME');
@@ -73,6 +76,8 @@ export function App() {
     playerAvatar: string;
     opponent1: { name: string; avatar: string; difficulty?: AIDifficulty; personality?: any };
     opponent2: { name: string; avatar: string; difficulty?: AIDifficulty; personality?: any };
+    isServerMultiplayer?: boolean;
+    serverPlayerId?: string;
   }) => {
     setGameConfig({
       playerName: config.playerName || 'You',
@@ -93,6 +98,8 @@ export function App() {
       ),
       difficulty: 'MEDIUM',
       isMultiplayer: true,
+      isServerMultiplayer: config.isServerMultiplayer,
+      serverPlayerId: config.serverPlayerId,
       tableName: config.tableName,
       ante: config.ante,
       roomCode: config.roomCode,
