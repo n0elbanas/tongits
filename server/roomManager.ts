@@ -20,6 +20,81 @@ export class RoomManager {
   private sessions: Map<string, GameSession> = new Map(); // roomId -> GameSession
   private wsMap: Map<WebSocket, { roomId: string; playerId: string }> = new Map();
   private playerSockets: Map<string, WebSocket> = new Map(); // playerId -> WebSocket
+  private connectedClients: Set<WebSocket> = new Set(); // all active sockets in lobby
+
+  constructor() {
+    this.seedDefaultRooms();
+  }
+
+  public registerClient(ws: WebSocket) {
+    this.connectedClients.add(ws);
+  }
+
+  public unregisterClient(ws: WebSocket) {
+    this.connectedClients.delete(ws);
+    this.handleDisconnect(ws);
+  }
+
+  private seedDefaultRooms() {
+    const defaultTables = [
+      {
+        id: 'room_mnl99',
+        code: 'MNL99',
+        name: 'Manila Masters (High Stakes)',
+        ante: 10,
+        hostName: 'Rafael Bot',
+        hostAvatar: 'avatar_3',
+      },
+      {
+        id: 'room_ceb14',
+        code: 'CEB14',
+        name: 'Cebu Casuals Table',
+        ante: 2,
+        hostName: 'Liza Bot',
+        hostAvatar: 'avatar_4',
+      },
+      {
+        id: 'room_bag88',
+        code: 'BAG88',
+        name: 'Baguio Pro League',
+        ante: 5,
+        hostName: 'Marco Bot',
+        hostAvatar: 'avatar_5',
+      },
+    ];
+
+    for (const t of defaultTables) {
+      if (!this.rooms.has(t.id)) {
+        const botId = 'bot_host_' + t.code.toLowerCase();
+        const hostPlayer: RoomPlayer = {
+          id: botId,
+          name: t.hostName,
+          avatar: t.hostAvatar,
+          isReady: true,
+          isHost: true,
+          isBot: true,
+          chips: 10000,
+          aiDifficulty: 'MEDIUM',
+          aiPersonality: 'BALANCED',
+        };
+
+        const room: RoomState = {
+          id: t.id,
+          code: t.code,
+          name: t.name,
+          ante: t.ante,
+          isPrivate: false,
+          status: 'WAITING',
+          players: [hostPlayer],
+          createdAt: Date.now(),
+          hostId: botId,
+        };
+
+        this.rooms.set(t.id, room);
+        this.roomByCode.set(t.code, t.id);
+      }
+    }
+  }
 
   public getPublicRooms(): PublicRoomInfo[] {
     const list: PublicRoomInfo[] = [];
@@ -40,6 +115,19 @@ export class RoomManager {
       }
     }
     return list;
+  }
+
+  public broadcastPublicRooms() {
+    const msg: ServerMessage = {
+      type: 'ROOMS_LIST',
+      payload: { rooms: this.getPublicRooms() },
+    };
+    const json = JSON.stringify(msg);
+    this.connectedClients.forEach((ws) => {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(json);
+      }
+    });
   }
 
   public createRoom(
@@ -76,7 +164,7 @@ export class RoomManager {
       id: roomId,
       code,
       name: params.tableName || `${params.playerName}'s Table`,
-      ante: params.ante || 100,
+      ante: params.ante || 5,
       isPrivate: !!params.isPrivate,
       status: 'WAITING',
       players: [hostPlayer],
@@ -89,6 +177,7 @@ export class RoomManager {
     this.wsMap.set(ws, { roomId, playerId });
     this.playerSockets.set(playerId, ws);
 
+    this.broadcastPublicRooms();
     return { room, playerId };
   }
 
@@ -102,10 +191,47 @@ export class RoomManager {
   ): { success: boolean; error?: string; room?: RoomState; playerId?: string } {
     this.handleDisconnect(ws);
 
-    const code = params.roomCode.trim().toUpperCase();
-    const roomId = this.roomByCode.get(code);
+    const code = (params.roomCode || '').trim().toUpperCase();
+    if (!code) {
+      return { success: false, error: 'Please enter a valid room code.' };
+    }
+
+    let roomId = this.roomByCode.get(code);
+
+    // If room code does not exist yet, auto-create the room on-demand with this code!
+    // This allows friends sharing any custom code to meet seamlessly without "Room not found" errors!
     if (!roomId) {
-      return { success: false, error: 'Room not found. Check the room code.' };
+      const newRoomId = 'room_' + Math.random().toString(36).substring(2, 9);
+      const playerId = 'p_' + Math.random().toString(36).substring(2, 9);
+      const hostPlayer: RoomPlayer = {
+        id: playerId,
+        name: params.playerName || 'Player 1',
+        avatar: params.playerAvatar || 'avatar_1',
+        isReady: true,
+        isHost: true,
+        isBot: false,
+        chips: 10000,
+      };
+
+      const room: RoomState = {
+        id: newRoomId,
+        code,
+        name: `Table (${code})`,
+        ante: 5,
+        isPrivate: false,
+        status: 'WAITING',
+        players: [hostPlayer],
+        createdAt: Date.now(),
+        hostId: playerId,
+      };
+
+      this.rooms.set(newRoomId, room);
+      this.roomByCode.set(code, newRoomId);
+      this.wsMap.set(ws, { roomId: newRoomId, playerId });
+      this.playerSockets.set(playerId, ws);
+
+      this.broadcastPublicRooms();
+      return { success: true, room, playerId };
     }
 
     const room = this.rooms.get(roomId);
@@ -122,15 +248,25 @@ export class RoomManager {
     }
 
     const playerId = 'p_' + Math.random().toString(36).substring(2, 9);
+
+    // If room has only bots, promote the joining human to host
+    const isFirstHuman = !room.players.some((p) => !p.isBot);
+
     const newPlayer: RoomPlayer = {
       id: playerId,
       name: params.playerName || `Player ${room.players.length + 1}`,
       avatar: params.playerAvatar || 'avatar_2',
-      isReady: false,
-      isHost: false,
+      isReady: isFirstHuman, // Host is ready by default
+      isHost: isFirstHuman,
       isBot: false,
       chips: 10000,
     };
+
+    if (isFirstHuman) {
+      const oldHost = room.players.find((p) => p.isHost);
+      if (oldHost) oldHost.isHost = false;
+      room.hostId = playerId;
+    }
 
     room.players.push(newPlayer);
     this.wsMap.set(ws, { roomId, playerId });
@@ -141,6 +277,7 @@ export class RoomManager {
       payload: { room },
     });
 
+    this.broadcastPublicRooms();
     return { success: true, room, playerId };
   }
 
@@ -183,6 +320,7 @@ export class RoomManager {
       payload: { room },
     });
 
+    this.broadcastPublicRooms();
     return { success: true };
   }
 
@@ -262,6 +400,7 @@ export class RoomManager {
       }
     }
 
+    this.broadcastPublicRooms();
     return { success: true };
   }
 
@@ -319,7 +458,6 @@ export class RoomManager {
     const session = this.sessions.get(roomId);
     if (session) {
       session.removeSocket(playerId);
-      // If no human sockets left in session, clean up
       let hasHumanLeft = false;
       for (const p of session.state.players) {
         if (p.type === 'HUMAN' && this.playerSockets.has(p.id)) {
@@ -336,13 +474,35 @@ export class RoomManager {
     const room = this.rooms.get(roomId);
     if (!room) return;
 
-    // Remove player or replace
+    // Remove player
     room.players = room.players.filter((p) => p.id !== playerId);
 
+    const defaultCodes = ['MNL99', 'CEB14', 'BAG88'];
+    const isDefaultRoom = defaultCodes.includes(room.code);
+
     if (room.players.length === 0 || !room.players.some((p) => !p.isBot)) {
-      // Room empty of humans, close room
-      this.roomByCode.delete(room.code);
-      this.rooms.delete(roomId);
+      if (isDefaultRoom) {
+        // Reset default room with bot host
+        const botId = 'bot_host_' + room.code.toLowerCase();
+        room.status = 'WAITING';
+        room.players = [
+          {
+            id: botId,
+            name: `${room.name.split(' ')[0]} Bot`,
+            avatar: 'avatar_3',
+            isReady: true,
+            isHost: true,
+            isBot: true,
+            chips: 10000,
+          },
+        ];
+        room.hostId = botId;
+      } else {
+        // Custom room empty of humans, close it
+        this.roomByCode.delete(room.code);
+        this.rooms.delete(roomId);
+      }
+
       const sess = this.sessions.get(roomId);
       if (sess) {
         sess.destroy();
@@ -364,6 +524,8 @@ export class RoomManager {
         payload: { room },
       });
     }
+
+    this.broadcastPublicRooms();
   }
 
   private broadcastToRoom(roomId: string, message: ServerMessage) {

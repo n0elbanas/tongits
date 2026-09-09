@@ -58,6 +58,8 @@ function send(ws: WebSocket, msg: ServerMessage) {
 }
 
 wss.on('connection', (ws: WebSocket) => {
+  roomManager.registerClient(ws);
+
   // Send public rooms list on initial connect
   send(ws, {
     type: 'ROOMS_LIST',
@@ -174,11 +176,11 @@ wss.on('connection', (ws: WebSocket) => {
   });
 
   ws.on('close', () => {
-    roomManager.handleDisconnect(ws);
+    roomManager.unregisterClient(ws);
   });
 
   ws.on('error', () => {
-    roomManager.handleDisconnect(ws);
+    roomManager.unregisterClient(ws);
   });
 });
 

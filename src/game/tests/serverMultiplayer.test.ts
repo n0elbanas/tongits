@@ -36,8 +36,7 @@ describe('Server Multiplayer & RoomManager', () => {
     expect(room.players[0].isReady).toBe(true);
 
     const publicRooms = manager.getPublicRooms();
-    expect(publicRooms).toHaveLength(1);
-    expect(publicRooms[0].code).toBe(room.code);
+    expect(publicRooms.some((r) => r.code === room.code)).toBe(true);
   });
 
   it('allows second player to join via room code', () => {
@@ -69,7 +68,7 @@ describe('Server Multiplayer & RoomManager', () => {
     const manager = new RoomManager();
     const ws1 = createMockWebSocket();
 
-    manager.createRoom(ws1, {
+    const { room } = manager.createRoom(ws1, {
       tableName: 'Test Room',
       ante: 5,
       isPrivate: false,
@@ -80,8 +79,8 @@ describe('Server Multiplayer & RoomManager', () => {
     const fillRes = manager.fillBots(ws1);
     expect(fillRes.success).toBe(true);
 
-    const publicRooms = manager.getPublicRooms();
-    expect(publicRooms[0].playerCount).toBe(3);
+    const createdRoom = manager.getPublicRooms().find((r) => r.code === room.code);
+    expect(createdRoom?.playerCount).toBe(3);
   });
 
   it('anti-cheat: masks opponent hands while preserving recipient hand and card counts', () => {
