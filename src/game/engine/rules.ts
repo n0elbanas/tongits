@@ -180,7 +180,7 @@ export function validateDiscard(state: GameState, playerId: string, card: Card):
 // -------------------------------------------------------------
 
 export function startNewGame(
-  playerConfigs: Array<{ id: string; name: string; avatar: string; type: 'HUMAN' | 'AI'; aiDifficulty?: any; aiPersonality?: any }>,
+  playerConfigs: Array<{ id: string; name: string; avatar: string; type: 'HUMAN' | 'AI'; aiDifficulty?: any; aiPersonality?: any; initialChips?: number }>,
   options?: { ante?: number; tableName?: string; isMultiplayer?: boolean }
 ): GameState {
   const initialPlayers: Player[] = playerConfigs.map((cfg) => ({
@@ -189,7 +189,7 @@ export function startNewGame(
     exposedMelds: [],
     opened: false,
     burned: false,
-    chips: 100, // starting bankroll
+    chips: cfg.initialChips ?? 100, // starting bankroll
     winStreak: 0,
     totalWins: 0,
     totalLosses: 0,

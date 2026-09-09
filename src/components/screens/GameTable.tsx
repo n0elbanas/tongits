@@ -41,6 +41,8 @@ import { soundManager } from '../../audio/soundEffects';
 import '../../styles/table.css';
 import { wsTransport } from '../../game/network/websocketTransport';
 import { MobileFullscreenButton } from '../ui/MobileFullscreenButton';
+import { chipBankroll } from '../../services/chipBankroll';
+import { FreeChipsModal } from '../modals/FreeChipsModal';
 
 interface GameTableProps {
   gameConfig: {
@@ -61,9 +63,10 @@ interface GameTableProps {
 
 export const GameTable: React.FC<GameTableProps> = ({ gameConfig, onExit }) => {
   const [gameState, setGameState] = useState<GameState>(() => {
+    const savedChips = chipBankroll.getChips();
     return startNewGame(
       [
-        { id: 'player-human', name: gameConfig.playerName, avatar: gameConfig.playerAvatar, type: 'HUMAN' },
+        { id: 'player-human', name: gameConfig.playerName, avatar: gameConfig.playerAvatar, type: 'HUMAN', initialChips: savedChips },
         { id: gameConfig.bot1.id, name: gameConfig.bot1.name, avatar: gameConfig.bot1.avatar, type: 'AI', aiDifficulty: gameConfig.bot1.difficulty, aiPersonality: gameConfig.bot1.personality },
         { id: gameConfig.bot2.id, name: gameConfig.bot2.name, avatar: gameConfig.bot2.avatar, type: 'AI', aiDifficulty: gameConfig.bot2.difficulty, aiPersonality: gameConfig.bot2.personality },
       ],
@@ -86,6 +89,7 @@ export const GameTable: React.FC<GameTableProps> = ({ gameConfig, onExit }) => {
   const [showDiscardHistory, setShowDiscardHistory] = useState(false);
   const [showChatMenu, setShowChatMenu] = useState(false);
   const [activeChatBubble, setActiveChatBubble] = useState<{ sender: string; message: string } | null>(null);
+  const [showFreeChipsModal, setShowFreeChipsModal] = useState(false);
 
   const humanPlayerId =
     gameConfig.isServerMultiplayer && gameConfig.serverPlayerId
@@ -98,6 +102,27 @@ export const GameTable: React.FC<GameTableProps> = ({ gameConfig, onExit }) => {
   const bot2 = opponents[1] || gameState.players[2] || gameState.players[0];
 
   const isHumanTurn = gameState.currentPlayerId === humanPlayer.id;
+
+  // Sync human player chips to persistent bankroll and listen for ad rewards
+  useEffect(() => {
+    if (humanPlayer && typeof humanPlayer.chips === 'number') {
+      chipBankroll.setChips(humanPlayer.chips);
+    }
+  }, [humanPlayer?.chips]);
+
+  useEffect(() => {
+    const handleChipsFromAd = (e: any) => {
+      const newChips = e.detail;
+      setGameState((prev) => ({
+        ...prev,
+        players: prev.players.map((p) =>
+          p.id === humanPlayerId ? { ...p, chips: newChips } : p
+        ),
+      }));
+    };
+    window.addEventListener('tongits_chips_updated', handleChipsFromAd);
+    return () => window.removeEventListener('tongits_chips_updated', handleChipsFromAd);
+  }, [humanPlayerId]);
 
   const showNotification = useCallback((text: string, type: 'primary' | 'gold' | 'danger' | 'special' = 'gold', duration = 1800) => {
     notificationCountRef.current += 1;
@@ -678,9 +703,30 @@ export const GameTable: React.FC<GameTableProps> = ({ gameConfig, onExit }) => {
             <span style={{ fontWeight: 800, fontSize: 'clamp(12px, 1.3vw, 14px)', color: isHumanTurn ? '#fbbf24' : '#f3f4f6', whiteSpace: 'nowrap' }}>
               {humanPlayer.name}
             </span>
-            <span style={{ color: '#fbbf24', fontWeight: 700, fontSize: 'clamp(11px, 1.2vw, 13px)', whiteSpace: 'nowrap' }}>
-              ⬡ {humanPlayer.chips} Chips
-            </span>
+            <button
+              onClick={() => {
+                soundManager.playButtonClick();
+                setShowFreeChipsModal(true);
+              }}
+              title="Get Free Chips (Watch Ad)"
+              style={{
+                background: humanPlayer.chips <= (gameState.ante ?? 2) ? 'rgba(239, 68, 68, 0.25)' : 'rgba(245, 158, 11, 0.15)',
+                border: humanPlayer.chips <= (gameState.ante ?? 2) ? '1px solid #ef4444' : '1px solid rgba(245, 158, 11, 0.4)',
+                borderRadius: 9999,
+                padding: '2px 8px',
+                color: '#fbbf24',
+                fontWeight: 800,
+                fontSize: 'clamp(10px, 1.1vw, 12px)',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 4,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              <span>⬡ {humanPlayer.chips} Chips</span>
+              <span style={{ fontSize: 11, opacity: 0.9 }}>+</span>
+            </button>
             {humanPlayer.opened && (
               <span style={{ fontSize: 9, fontWeight: 800, color: '#10b981', background: 'rgba(16, 185, 129, 0.2)', padding: '1px 5px', borderRadius: 4 }}>
                 OPENED
@@ -723,6 +769,11 @@ export const GameTable: React.FC<GameTableProps> = ({ gameConfig, onExit }) => {
         isOpen={showDiscardHistory}
         discardPile={gameState.discardPile}
         onClose={() => setShowDiscardHistory(false)}
+      />
+
+      <FreeChipsModal
+        isOpen={showFreeChipsModal}
+        onClose={() => setShowFreeChipsModal(false)}
       />
     </div>
   );

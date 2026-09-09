@@ -150,6 +150,8 @@ export function App() {
             onMultiplayer={handleMultiplayerClick}
             onHowToPlay={() => setCurrentScreen('TUTORIAL')}
             onSettings={() => setCurrentScreen('SETTINGS')}
+            playerName={playerName || 'Player'}
+            playerAvatar={playerAvatar || 'avatar-1'}
           />
         )}
 
