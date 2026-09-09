@@ -56,8 +56,8 @@ export const PlayerArea: React.FC<PlayerAreaProps> = ({
       </div>
 
       {/* Player info */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0, flex: 1 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
           <span style={{
             fontWeight: 800,
             fontSize: 'clamp(11px, 1.4vw, 14px)',
@@ -65,7 +65,6 @@ export const PlayerArea: React.FC<PlayerAreaProps> = ({
             whiteSpace: 'nowrap',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
-            maxWidth: 90,
           }}>
             {player.name}
           </span>
@@ -85,11 +84,11 @@ export const PlayerArea: React.FC<PlayerAreaProps> = ({
           )}
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'rgba(255,255,255,0.65)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'rgba(255,255,255,0.7)', whiteSpace: 'nowrap' }}>
           <span style={{ color: '#fbbf24', fontWeight: 700 }}>
             ⬡ {player.chips}
           </span>
-          <span>·</span>
+          <span style={{ opacity: 0.5 }}>·</span>
           <span>{player.hand.length}c</span>
         </div>
       </div>
@@ -97,17 +96,15 @@ export const PlayerArea: React.FC<PlayerAreaProps> = ({
       {/* Opponent mini hand preview */}
       {isOpponent && (
         <div className="opponent-mini-hand" style={{ display: 'flex', marginLeft: 6, alignItems: 'center', flexShrink: 0 }}>
-          {Array.from({ length: Math.min(player.hand.length, 5) }).map((_, idx) => (
+          {Array.from({ length: Math.min(player.hand.length, 3) }).map((_, idx) => (
             <div
               key={idx}
+              className="opponent-card-back"
               style={{
-                marginLeft: idx === 0 ? 0 : -22,
-                transform: `scale(0.52) rotate(${(idx - 2) * 5}deg)`,
-                transformOrigin: 'bottom center',
+                marginLeft: idx === 0 ? 0 : -10,
+                transform: `rotate(${(idx - 1) * 4}deg)`,
               }}
-            >
-              <PlayingCard isFaceUp={false} isDisabled={true} />
-            </div>
+            />
           ))}
         </div>
       )}

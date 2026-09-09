@@ -440,6 +440,39 @@
   }
 }
 
+.opponent-mini-hand {
+  display: flex;
+  align-items: center;
+  margin-left: 6px;
+  flex-shrink: 0;
+}
+
+.opponent-card-back {
+  width: 18px;
+  height: 25px;
+  border-radius: 3px;
+  background: linear-gradient(135deg, #183d31 0%, #0c241c 100%);
+  border: 1px solid rgba(245, 158, 11, 0.45);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.human-player-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+  padding: 4px 14px 4px 6px;
+  border-radius: 9999px;
+  background: rgba(10, 25, 20, 0.75);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  z-index: 30;
+}
+
 /* Mobile Landscape Handling */
 @media (max-height: 560px) and (orientation: landscape) {
   .felt-table {
@@ -451,14 +484,14 @@
   }
 
   .table-top-bar {
-    min-height: 26px;
+    min-height: 24px;
     gap: 8px;
     margin-bottom: 2px;
   }
 
   .table-top-bar .action-btn {
-    padding: 3px 10px;
-    font-size: 10.5px;
+    padding: 2px 8px;
+    font-size: 10px;
   }
 
   .pot-badge {
@@ -468,25 +501,43 @@
   }
 
   .opponents-row {
-    padding: 0 4px;
+    padding: 0 6px;
     gap: 8px;
   }
 
   .player-card {
-    padding: 2px 6px;
-    gap: 5px;
-    max-width: 44%;
+    padding: 2px 8px;
+    gap: 6px;
+    max-width: 47%;
     border-radius: 10px;
   }
 
   .player-avatar-wrapper {
-    width: 28px;
-    height: 28px;
-    font-size: 14px;
+    width: auto;
+    height: auto;
   }
 
   .opponent-mini-hand {
     display: flex !important;
+    margin-left: 4px;
+  }
+
+  .opponent-card-back {
+    width: 14px;
+    height: 20px;
+  }
+
+  .human-player-badge {
+    position: absolute;
+    bottom: 8px;
+    left: 12px;
+    margin-top: 0;
+    padding: 2px 10px 2px 4px;
+    background: rgba(10, 25, 20, 0.88);
+    border: 1px solid rgba(245, 158, 11, 0.35);
+    border-radius: 9999px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+    z-index: 35;
   }
 
   /* In landscape, place piles & melds side-by-side to save vertical height */
@@ -508,20 +559,20 @@
 
   .pile-slot .playing-card-container,
   .pile-slot .playing-card {
-    width: clamp(48px, 6.8vw, 62px);
+    width: clamp(44px, 6.2vw, 56px);
   }
 
   .table-melds-container {
-    max-height: clamp(52px, 18dvh, 72px);
-    padding: 3px 8px;
-    gap: 6px;
+    max-height: clamp(46px, 15dvh, 64px);
+    padding: 2px 6px;
+    gap: 5px;
     flex: 1;
     max-width: 70%;
   }
 
   .meld-group .playing-card-container,
   .meld-group .playing-card {
-    width: clamp(34px, 4.8vw, 44px);
+    width: clamp(30px, 4.4vw, 40px);
   }
 
   .bottom-player-section {
@@ -546,9 +597,40 @@
   }
 
   .player-hand-container {
-    height: clamp(98px, 27dvh, 122px);
+    height: clamp(74px, 20dvh, 88px);
     padding: 0 8px;
     margin: 0 auto;
+  }
+}
+
+@media (max-height: 420px) and (orientation: landscape) {
+  .felt-table {
+    padding: 2px 6px;
+    border-width: 2px;
+  }
+
+  .table-top-bar {
+    min-height: 20px;
+    margin-bottom: 0px;
+  }
+
+  .player-card {
+    padding: 2px 5px;
+    gap: 4px;
+  }
+
+  .center-table-area {
+    margin: 1px 0;
+  }
+
+  .player-hand-container {
+    height: clamp(66px, 18dvh, 78px);
+  }
+
+  .human-player-badge {
+    bottom: 4px;
+    left: 8px;
+    padding: 2px 8px 2px 4px;
   }
 }
 

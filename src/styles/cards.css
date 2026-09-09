@@ -245,26 +245,37 @@
   }
 }
 
-/* Mobile & Tablet Landscape: Make cards noticeably bigger without overlap or clipping */
+/* Mobile Landscape Card Optimization: crisp, readable, without vertical pushing or overlap */
 @media (orientation: landscape) and (max-height: 560px) {
   .playing-card-container,
   .playing-card {
-    width: clamp(56px, 8.4vw, 76px);
+    width: clamp(44px, 6.2vw, 56px);
   }
 
   .player-hand-container {
-    height: clamp(98px, 27dvh, 122px);
-    padding: 0 12px;
+    height: clamp(74px, 20dvh, 88px);
+    padding: 0 8px;
     max-width: 95vw;
   }
 
   .playing-card.selected,
   .playing-card-container.selected {
-    transform: translateY(-16px) scale(1.05);
+    transform: translateY(-12px) scale(1.04);
   }
 
   .card-corner-rank {
-    font-size: clamp(12px, 1.8vw, 16px);
+    font-size: clamp(11px, 1.4vw, 14px);
+  }
+}
+
+@media (orientation: landscape) and (max-height: 420px) {
+  .playing-card-container,
+  .playing-card {
+    width: clamp(40px, 5.8vw, 50px);
+  }
+
+  .player-hand-container {
+    height: clamp(66px, 18dvh, 78px);
   }
 }
 

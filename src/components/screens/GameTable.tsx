@@ -28,6 +28,7 @@ import { DiscardPile } from '../table/DiscardPile';
 import { MeldArea } from '../table/MeldArea';
 import { PlayerArea } from '../table/PlayerArea';
 import { Hand } from '../cards/Hand';
+import { PlayerAvatar } from '../common/PlayerAvatar';
 import { ActionBar } from '../actions/ActionBar';
 import { ActionText } from '../actions/ActionText';
 import { ScoreboardModal } from '../modals/ScoreboardModal';
@@ -661,15 +662,27 @@ export const GameTable: React.FC<GameTableProps> = ({ gameConfig, onExit }) => {
             disabled={!isHumanTurn}
           />
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: -4 }}>
-            <span style={{ fontWeight: 800, fontSize: 14, color: '#f3f4f6' }}>
+          <div className="human-player-badge">
+            <div className="human-player-avatar-wrap" style={{ position: 'relative', flexShrink: 0 }}>
+              <PlayerAvatar
+                avatarId={humanPlayer.avatar}
+                name={humanPlayer.name}
+                size={26}
+                status={isHumanTurn ? 'YOUR_TURN' : 'IDLE'}
+                showStatusRing={isHumanTurn}
+              />
+              {gameState.dealerId === humanPlayer.id && (
+                <div className="dealer-button" style={{ bottom: -2, right: -2, width: 14, height: 14, fontSize: 8 }}>D</div>
+              )}
+            </div>
+            <span style={{ fontWeight: 800, fontSize: 'clamp(12px, 1.3vw, 14px)', color: isHumanTurn ? '#fbbf24' : '#f3f4f6', whiteSpace: 'nowrap' }}>
               {humanPlayer.name}
             </span>
-            <span style={{ color: '#fbbf24', fontWeight: 700, fontSize: 13 }}>
+            <span style={{ color: '#fbbf24', fontWeight: 700, fontSize: 'clamp(11px, 1.2vw, 13px)', whiteSpace: 'nowrap' }}>
               ⬡ {humanPlayer.chips} Chips
             </span>
             {humanPlayer.opened && (
-              <span style={{ fontSize: 10, fontWeight: 800, color: '#10b981', background: 'rgba(16, 185, 129, 0.2)', padding: '2px 6px', borderRadius: 4 }}>
+              <span style={{ fontSize: 9, fontWeight: 800, color: '#10b981', background: 'rgba(16, 185, 129, 0.2)', padding: '1px 5px', borderRadius: 4 }}>
                 OPENED
               </span>
             )}
