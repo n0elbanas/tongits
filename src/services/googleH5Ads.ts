@@ -32,7 +32,11 @@ class GoogleH5AdsService {
 
   init(clientId?: string) {
     if (this.isInitialized) return;
-    this.clientId = clientId || window.GOOGLE_ADSENSE_CLIENT_ID || 'ca-pub-test-tongits';
+    this.clientId =
+      clientId ||
+      (import.meta as any).env?.VITE_ADSENSE_CLIENT_ID ||
+      window.GOOGLE_ADSENSE_CLIENT_ID ||
+      'ca-pub-test-tongits';
 
     window.adsbygoogle = window.adsbygoogle || [];
     window.adBreak =
