@@ -80,9 +80,7 @@ export const MeldArea: React.FC<MeldAreaProps> = ({
                 <div
                   key={card.id}
                   style={{
-                    marginLeft: idx === 0 ? 0 : 'clamp(-24px, -2.8vw, -14px)',
-                    transform: 'scale(0.85)',
-                    transformOrigin: 'top left',
+                    marginLeft: idx === 0 ? 0 : 'clamp(-26px, -3.4vw, -16px)',
                   }}
                 >
                   <PlayingCard card={card} isFaceUp={true} />
