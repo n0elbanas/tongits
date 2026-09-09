@@ -292,7 +292,7 @@ export const SetupModal: React.FC<SetupModalProps> = ({
             />
 
             {/* Avatar grid — responsive auto-fill for mobile */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(52px, 1fr))', gap: 8 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(58px, 1fr))', gap: 10 }}>
               {activeAvatarsList.map((av) => {
                 const isSelected = normalizedUserAvatar === av.id;
                 return (
@@ -303,19 +303,18 @@ export const SetupModal: React.FC<SetupModalProps> = ({
                       soundManager.playButtonClick();
                       setPlayerAvatar(av.id);
                     }}
-                    whileHover={{ scale: 1.04, y: -2 }}
-                    whileTap={{ scale: 0.96 }}
+                    whileHover={{ scale: 1.05, y: -2 }}
+                    whileTap={{ scale: 0.95 }}
                     style={{
                       position: 'relative',
                       display: 'flex',
-                      flexDirection: 'column',
                       alignItems: 'center',
-                      gap: 4,
-                      padding: '8px 4px 6px',
-                      borderRadius: 12,
-                      backgroundColor: isSelected ? 'rgba(245,158,11,0.18)' : 'rgba(255,255,255,0.04)',
-                      border: isSelected ? '1.5px solid #fbbf24' : '1px solid rgba(255,255,255,0.08)',
-                      boxShadow: isSelected ? '0 0 12px rgba(251,191,36,0.3)' : 'none',
+                      justifyContent: 'center',
+                      padding: 4,
+                      borderRadius: 16,
+                      backgroundColor: isSelected ? 'rgba(245,158,11,0.22)' : 'rgba(255,255,255,0.04)',
+                      border: isSelected ? '2px solid #fbbf24' : '1px solid rgba(255,255,255,0.08)',
+                      boxShadow: isSelected ? '0 0 14px rgba(251,191,36,0.35)' : 'none',
                       cursor: 'pointer',
                       transition: 'border-color 0.2s, background-color 0.2s',
                     }}
@@ -323,33 +322,18 @@ export const SetupModal: React.FC<SetupModalProps> = ({
                     <PlayerAvatar
                       avatarId={av.id}
                       name={av.name}
-                      size={40}
+                      size={52}
                       status={isSelected ? 'YOUR_TURN' : 'IDLE'}
                       showStatusRing={isSelected}
                     />
-                    <span
-                      style={{
-                        fontSize: 11,
-                        fontWeight: 700,
-                        color: isSelected ? '#fbbf24' : 'rgba(255,255,255,0.7)',
-                        textAlign: 'center',
-                        lineHeight: 1.1,
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        maxWidth: '100%',
-                      }}
-                    >
-                      {av.name}
-                    </span>
                     {isSelected && (
                       <div
                         style={{
                           position: 'absolute',
-                          top: 4,
-                          right: 4,
-                          width: 14,
-                          height: 14,
+                          top: 2,
+                          right: 2,
+                          width: 15,
+                          height: 15,
                           borderRadius: '50%',
                           backgroundColor: '#fbbf24',
                           display: 'flex',

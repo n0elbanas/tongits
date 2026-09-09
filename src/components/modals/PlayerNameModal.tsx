@@ -233,50 +233,42 @@ export const PlayerNameModal: React.FC<PlayerNameModalProps> = ({
                       style={{
                         position: 'relative',
                         flex: '0 0 auto',
-                        background: isSelected ? 'rgba(245,158,11,0.2)' : 'rgba(255,255,255,0.04)',
-                        border: isSelected ? '2px solid #fbbf24' : '1px solid rgba(255,255,255,0.1)',
-                        borderRadius: 14,
-                        padding: 6,
+                        background: isSelected ? 'rgba(245,158,11,0.22)' : 'rgba(255,255,255,0.04)',
+                        border: isSelected ? '2px solid #fbbf24' : '1px solid rgba(255,255,255,0.12)',
+                        borderRadius: 18,
+                        padding: 4,
                         cursor: 'pointer',
                         display: 'flex',
-                        flexDirection: 'column',
                         alignItems: 'center',
-                        gap: 4,
+                        justifyContent: 'center',
                         transition: 'all 0.18s ease',
+                        boxShadow: isSelected ? '0 0 14px rgba(251,191,36,0.35)' : 'none',
                       }}
                     >
                       <PlayerAvatar
                         avatarId={av.id}
                         name={av.name}
-                        size={40}
+                        size={56}
                         status={isSelected ? 'YOUR_TURN' : 'IDLE'}
                         showStatusRing={isSelected}
                       />
-                      <span
-                        style={{
-                          fontSize: 10,
-                          fontWeight: 700,
-                          color: isSelected ? '#fbbf24' : 'rgba(255,255,255,0.7)',
-                        }}
-                      >
-                        {av.name}
-                      </span>
                       {isSelected && (
                         <div
                           style={{
                             position: 'absolute',
                             top: 2,
                             right: 2,
-                            width: 14,
-                            height: 14,
+                            width: 16,
+                            height: 16,
                             borderRadius: '50%',
                             backgroundColor: '#fbbf24',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
+                            boxShadow: '0 2px 5px rgba(0,0,0,0.6)',
                           }}
                         >
-                          <Check size={9} color="#1a0f02" strokeWidth={3.5} />
+                          <Check size={10} color="#1a0f02" strokeWidth={3.5} />
                         </div>
                       )}
                     </button>
