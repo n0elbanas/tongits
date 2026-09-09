@@ -276,7 +276,7 @@ ExecStart=/usr/bin/npm run server
 Restart=always
 RestartSec=5
 Environment=NODE_ENV=production
-Environment=PORT=3001
+Environment=PORT=5005
 Environment=HOST=127.0.0.1
 
 [Install]
@@ -293,22 +293,22 @@ systemctl status tongits-server
 ```
 
 #### 4. Configure `/etc/caddy/Caddyfile`
-Caddy handles automatic HTTPS (SSL) and routes WebSocket traffic to port 3001 while serving frontend static files:
+Caddy handles automatic HTTPS (SSL) and routes WebSocket traffic to port 5005 while serving frontend static files:
 
 ```caddyfile
-tongits.yourdomain.com {
+tongits.grenoma.cloud {
     # 1. Reverse proxy WebSocket connections & health check to Node.js backend
     handle /ws* {
-        reverse_proxy 127.0.0.1:3001
+        reverse_proxy 127.0.0.1:5005
     }
 
     handle /health {
-        reverse_proxy 127.0.0.1:3001
+        reverse_proxy 127.0.0.1:5005
     }
 
     # 2. Serve static React single-page application
     handle {
-        root * /var/www/tongits/dist
+        root * /opt/tongits/dist
         encode gzip zstd
         try_files {path} /index.html
         file_server

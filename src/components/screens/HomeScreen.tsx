@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Play, Users, BookOpen, Settings, Trophy, Sparkles } from 'lucide-react';
 import { soundManager } from '../../audio/soundEffects';
+import { MobileFullscreenButton } from '../ui/MobileFullscreenButton';
 
 interface HomeScreenProps {
   onPlaySolo: () => void;
@@ -33,6 +34,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         boxSizing: 'border-box',
       }}
     >
+      {/* Mobile-only Fullscreen button in top corner */}
+      <div style={{ position: 'absolute', top: 16, right: 16, zIndex: 60 }}>
+        <MobileFullscreenButton />
+      </div>
       {/* Ambient background decoration */}
       <div
         style={{

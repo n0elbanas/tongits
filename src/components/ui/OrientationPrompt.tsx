@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { RotateCw, Smartphone, Sparkles } from 'lucide-react';
+import { RotateCw, Smartphone, Sparkles, Maximize2 } from 'lucide-react';
+import { requestMobileFullscreen } from './MobileFullscreenButton';
 
 export const OrientationPrompt: React.FC = () => {
   const [isPortrait, setIsPortrait] = useState(false);
@@ -281,11 +282,38 @@ export const OrientationPrompt: React.FC = () => {
             </p>
           </div>
 
+          {/* Fullscreen & Rotate button */}
+          <button
+            onClick={async () => {
+              try {
+                await requestMobileFullscreen();
+              } catch {
+                // Ignore if not permitted
+              }
+              setIsDismissed(true);
+            }}
+            className="action-btn primary"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '10px 20px',
+              fontSize: 13,
+              fontWeight: 800,
+              boxShadow: '0 0 20px rgba(245, 158, 11, 0.4)',
+              width: '100%',
+              justifyContent: 'center',
+            }}
+          >
+            <Maximize2 size={16} fill="#05110d" />
+            <span>PLAY IN FULLSCREEN</span>
+          </button>
+
           {/* Dismiss / Continue in portrait fallback button */}
           <button
             onClick={() => setIsDismissed(true)}
             style={{
-              marginTop: 4,
+              marginTop: -6,
               background: 'transparent',
               border: 'none',
               color: 'rgba(255, 255, 255, 0.45)',

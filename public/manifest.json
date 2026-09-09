@@ -1,0 +1,17 @@
+{
+  "name": "Tong-Its Casino",
+  "short_name": "Tong-Its",
+  "description": "Authentic Filipino 3-Player Card Game with Intelligent AI & Live Multiplayer",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#05110d",
+  "theme_color": "#05110d",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}

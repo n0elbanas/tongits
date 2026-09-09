@@ -39,6 +39,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { soundManager } from '../../audio/soundEffects';
 import '../../styles/table.css';
 import { wsTransport } from '../../game/network/websocketTransport';
+import { MobileFullscreenButton } from '../ui/MobileFullscreenButton';
 
 interface GameTableProps {
   gameConfig: {
@@ -544,6 +545,9 @@ export const GameTable: React.FC<GameTableProps> = ({ gameConfig, onExit }) => {
                 )}
               </div>
             )}
+
+            {/* Mobile-only Fullscreen Toggle */}
+            <MobileFullscreenButton />
           </div>
         </div>
 
