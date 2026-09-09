@@ -26,7 +26,7 @@ export const MeldArea: React.FC<MeldAreaProps> = ({
 
   if (melds.length === 0) {
     return (
-      <div className="table-melds-container">
+      <div className="table-melds-container empty-melds">
         <span style={{ fontSize: 12, color: 'rgba(255, 255, 255, 0.4)', fontStyle: 'italic' }}>
           No exposed melds on table yet
         </span>
