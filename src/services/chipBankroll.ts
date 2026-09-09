@@ -1,6 +1,6 @@
 /**
  * Persistent chip bankroll and daily reward economy manager.
- * Stores virtual chip balances and daily streak claims safely in localStorage with fallback.
+ * Stores virtual chip balances, daily streak claims, and ad rate-limiting safely in localStorage with fallback.
  */
 
 const CHIPS_STORAGE_KEY = 'tongits_player_chips';
@@ -10,11 +10,27 @@ export const DEFAULT_STARTING_CHIPS = 300;
 
 export const STREAK_REWARDS = [100, 150, 200, 250, 300, 400, 500];
 
+// --- Rewarded Video Ad Rate Limiting Constants ---
+export const MAX_DAILY_REWARDED_ADS = 5;
+export const AD_COOLDOWN_SECONDS = 60;
+
+const AD_WATCH_DATE_KEY = 'tongits_ad_watch_date';
+const AD_WATCH_COUNT_KEY = 'tongits_ad_watch_count';
+const AD_LAST_TIMESTAMP_KEY = 'tongits_last_ad_timestamp';
+
 export interface DailyRewardStatus {
   canClaim: boolean;
   streak: number; // 1-7
   rewardAmount: number;
   hoursUntilNextClaim: number;
+}
+
+export interface RewardedAdStatus {
+  canWatch: boolean;
+  remainingToday: number;
+  maxDaily: number;
+  cooldownRemainingSeconds: number;
+  reason: 'READY' | 'COOLDOWN' | 'DAILY_LIMIT_REACHED';
 }
 
 const memoryStore: Record<string, string> = {};
@@ -38,6 +54,14 @@ function getStorage() {
       for (const k in memoryStore) delete memoryStore[k];
     },
   };
+}
+
+function getTodayKey(): string {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 export const chipBankroll = {
@@ -144,10 +168,92 @@ export const chipBankroll = {
     return { success: true, amount: reward, streak: status.streak };
   },
 
+  // --- Rewarded Ad Limits & Cooldown (5/day & 60s cooldown) ---
+
+  getRewardedAdStatus(): RewardedAdStatus {
+    const storage = getStorage();
+    const today = getTodayKey();
+    const storedDate = storage.getItem(AD_WATCH_DATE_KEY);
+
+    let watchedToday = 0;
+    if (storedDate === today) {
+      const parsed = parseInt(storage.getItem(AD_WATCH_COUNT_KEY) || '0', 10);
+      watchedToday = isNaN(parsed) ? 0 : parsed;
+    }
+
+    const remainingToday = Math.max(0, MAX_DAILY_REWARDED_ADS - watchedToday);
+
+    const lastTs = parseInt(storage.getItem(AD_LAST_TIMESTAMP_KEY) || '0', 10);
+    const elapsedSeconds = Math.floor((Date.now() - (isNaN(lastTs) ? 0 : lastTs)) / 1000);
+    const cooldownRemainingSeconds = Math.max(0, AD_COOLDOWN_SECONDS - elapsedSeconds);
+
+    if (remainingToday <= 0) {
+      return {
+        canWatch: false,
+        remainingToday: 0,
+        maxDaily: MAX_DAILY_REWARDED_ADS,
+        cooldownRemainingSeconds: 0,
+        reason: 'DAILY_LIMIT_REACHED',
+      };
+    }
+
+    if (cooldownRemainingSeconds > 0) {
+      return {
+        canWatch: false,
+        remainingToday,
+        maxDaily: MAX_DAILY_REWARDED_ADS,
+        cooldownRemainingSeconds,
+        reason: 'COOLDOWN',
+      };
+    }
+
+    return {
+      canWatch: true,
+      remainingToday,
+      maxDaily: MAX_DAILY_REWARDED_ADS,
+      cooldownRemainingSeconds: 0,
+      reason: 'READY',
+    };
+  },
+
+  recordRewardedAdWatch(): boolean {
+    const storage = getStorage();
+    const status = this.getRewardedAdStatus();
+    if (!status.canWatch) {
+      return false;
+    }
+
+    const today = getTodayKey();
+    const storedDate = storage.getItem(AD_WATCH_DATE_KEY);
+    let currentCount = 0;
+    if (storedDate === today) {
+      currentCount = parseInt(storage.getItem(AD_WATCH_COUNT_KEY) || '0', 10) || 0;
+    }
+
+    storage.setItem(AD_WATCH_DATE_KEY, today);
+    storage.setItem(AD_WATCH_COUNT_KEY, (currentCount + 1).toString());
+    storage.setItem(AD_LAST_TIMESTAMP_KEY, Date.now().toString());
+
+    if (typeof window !== 'undefined' && window.dispatchEvent) {
+      window.dispatchEvent(
+        new CustomEvent('tongits_ad_watched', {
+          detail: {
+            remainingToday: Math.max(0, MAX_DAILY_REWARDED_ADS - (currentCount + 1)),
+          },
+        })
+      );
+    }
+
+    return true;
+  },
+
   resetForTests(): void {
     const storage = getStorage();
     storage.removeItem(CHIPS_STORAGE_KEY);
     storage.removeItem(LAST_DAILY_CLAIM_KEY);
     storage.removeItem(STREAK_KEY);
+    storage.removeItem(AD_WATCH_DATE_KEY);
+    storage.removeItem(AD_WATCH_COUNT_KEY);
+    storage.removeItem(AD_LAST_TIMESTAMP_KEY);
   },
 };

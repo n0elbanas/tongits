@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Coins, Tv, X, Sparkles, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Coins, Tv, X, Sparkles, CheckCircle2, AlertCircle, Clock, ShieldAlert } from 'lucide-react';
 import { soundManager } from '../../audio/soundEffects';
-import { chipBankroll } from '../../services/chipBankroll';
+import { chipBankroll, RewardedAdStatus } from '../../services/chipBankroll';
 import { googleH5Ads } from '../../services/googleH5Ads';
 
 interface FreeChipsModalProps {
@@ -17,19 +17,46 @@ export const FreeChipsModal: React.FC<FreeChipsModalProps> = ({
   onOpenDailyReward,
 }) => {
   const [currentChips, setCurrentChips] = useState(() => chipBankroll.getChips());
+  const [adStatus, setAdStatus] = useState<RewardedAdStatus>(() =>
+    chipBankroll.getRewardedAdStatus()
+  );
   const [isWatchingAd, setIsWatchingAd] = useState(false);
   const [countdown, setCountdown] = useState(5);
   const [rewardSuccessMessage, setRewardSuccessMessage] = useState<string | null>(null);
 
+  // Sync chips and ad status
   useEffect(() => {
     const handleChipsUpdate = (e: any) => {
       setCurrentChips(e.detail);
     };
+    const handleAdWatched = () => {
+      setAdStatus(chipBankroll.getRewardedAdStatus());
+    };
+
     window.addEventListener('tongits_chips_updated', handleChipsUpdate);
-    return () => window.removeEventListener('tongits_chips_updated', handleChipsUpdate);
+    window.addEventListener('tongits_ad_watched', handleAdWatched);
+
+    return () => {
+      window.removeEventListener('tongits_chips_updated', handleChipsUpdate);
+      window.removeEventListener('tongits_ad_watched', handleAdWatched);
+    };
   }, []);
 
-  // Simulated ad countdown runner when fallback is active
+  // Cooldown countdown tick runner
+  useEffect(() => {
+    if (!isOpen) return;
+
+    // Immediate sync on open
+    setAdStatus(chipBankroll.getRewardedAdStatus());
+
+    const interval = setInterval(() => {
+      setAdStatus(chipBankroll.getRewardedAdStatus());
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isOpen]);
+
+  // Simulated ad video countdown runner when in test/fallback mode
   useEffect(() => {
     let timer: any;
     if (isWatchingAd && countdown > 0) {
@@ -37,12 +64,14 @@ export const FreeChipsModal: React.FC<FreeChipsModalProps> = ({
         setCountdown((prev) => prev - 1);
       }, 1000);
     } else if (isWatchingAd && countdown === 0) {
-      // Completed fallback ad
+      // Completed ad playback
       setIsWatchingAd(false);
-      const updated = chipBankroll.addChips(100);
+      chipBankroll.addChips(100);
+      chipBankroll.recordRewardedAdWatch();
       soundManager.playChips();
       setRewardSuccessMessage('+100 Free Chips added to your bankroll!');
       setCountdown(5);
+      setAdStatus(chipBankroll.getRewardedAdStatus());
     }
     return () => clearTimeout(timer);
   }, [isWatchingAd, countdown]);
@@ -50,6 +79,8 @@ export const FreeChipsModal: React.FC<FreeChipsModalProps> = ({
   if (!isOpen) return null;
 
   const handleWatchAdClick = () => {
+    if (!adStatus.canWatch) return;
+
     soundManager.playButtonClick();
     setRewardSuccessMessage(null);
 
@@ -62,11 +93,13 @@ export const FreeChipsModal: React.FC<FreeChipsModalProps> = ({
         },
         onReward: (amount) => {
           chipBankroll.addChips(amount);
+          chipBankroll.recordRewardedAdWatch();
           soundManager.playChips();
           setRewardSuccessMessage(`+${amount} Free Chips added to your bankroll!`);
+          setAdStatus(chipBankroll.getRewardedAdStatus());
         },
         onDismiss: () => {
-          // User cancelled ad
+          // User closed ad early
         },
         onError: () => {
           // Fallback to simulated ad
@@ -74,7 +107,7 @@ export const FreeChipsModal: React.FC<FreeChipsModalProps> = ({
           setCountdown(5);
         },
       },
-      // Fallback runner when real Google adBreak is in test/dev mode
+      // Fallback runner for offline / dev simulation
       () => {
         setIsWatchingAd(true);
         setCountdown(5);
@@ -179,27 +212,65 @@ export const FreeChipsModal: React.FC<FreeChipsModalProps> = ({
               FREE CHIPS REWARD
             </h2>
             <p style={{ margin: '4px 0 0', fontSize: 13, color: 'rgba(255, 255, 255, 0.7)' }}>
-              Bankroll low? Boost your virtual chips instantly!
+              Watch a sponsor video to claim +100 virtual chips!
             </p>
           </div>
 
-          {/* Current Balance Display */}
+          {/* Bankroll and Daily Limit Counter */}
           <div
             style={{
               width: '100%',
-              padding: '10px 16px',
-              borderRadius: 14,
-              backgroundColor: 'rgba(0, 0, 0, 0.4)',
-              border: '1px solid rgba(255, 255, 255, 0.15)',
               display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
+              gap: 8,
             }}
           >
-            <span style={{ fontSize: 13, color: '#9ca3af', fontWeight: 600 }}>Current Bankroll:</span>
-            <span style={{ fontSize: 16, color: '#fbbf24', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 6 }}>
-              🪙 {currentChips} Chips
-            </span>
+            {/* Current Balance */}
+            <div
+              style={{
+                flex: 1,
+                padding: '10px 14px',
+                borderRadius: 14,
+                backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 2,
+              }}
+            >
+              <span style={{ fontSize: 11, color: '#9ca3af', fontWeight: 600 }}>Bankroll:</span>
+              <span style={{ fontSize: 15, color: '#fbbf24', fontWeight: 800 }}>
+                🪙 {currentChips.toLocaleString()}
+              </span>
+            </div>
+
+            {/* Daily Ad Tracker */}
+            <div
+              style={{
+                flex: 1,
+                padding: '10px 14px',
+                borderRadius: 14,
+                backgroundColor: adStatus.remainingToday === 0
+                  ? 'rgba(239, 68, 68, 0.12)'
+                  : 'rgba(0, 0, 0, 0.4)',
+                border: adStatus.remainingToday === 0
+                  ? '1px solid rgba(239, 68, 68, 0.4)'
+                  : '1px solid rgba(255, 255, 255, 0.15)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 2,
+              }}
+            >
+              <span style={{ fontSize: 11, color: '#9ca3af', fontWeight: 600 }}>Daily Free Ads:</span>
+              <span
+                style={{
+                  fontSize: 15,
+                  fontWeight: 800,
+                  color: adStatus.remainingToday === 0 ? '#ef4444' : '#6ee7b7',
+                }}
+              >
+                {adStatus.remainingToday} / {adStatus.maxDaily} left
+              </span>
+            </div>
           </div>
 
           {/* Success Banner */}
@@ -266,33 +337,81 @@ export const FreeChipsModal: React.FC<FreeChipsModalProps> = ({
                   Reward unlocks in {countdown}s...
                 </div>
                 <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 4 }}>
-                  Please watch the full sponsor video to receive your +100 chips.
+                  Please watch the sponsor video to claim your +100 chips.
                 </div>
               </div>
             </div>
           ) : (
             <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {/* Watch Rewarded Video Ad Button */}
-              <button
-                className="gold-button"
-                onClick={handleWatchAdClick}
-                style={{
-                  width: '100%',
-                  padding: '14px 20px',
-                  borderRadius: 9999,
-                  fontSize: 15,
-                  fontWeight: 800,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 10,
-                  cursor: 'pointer',
-                  boxShadow: '0 0 20px rgba(251, 191, 36, 0.4)',
-                }}
-              >
-                <Tv size={18} fill="#1a0f02" />
-                <span>WATCH VIDEO AD (+100 CHIPS)</span>
-              </button>
+              {/* State 1: Daily Limit Reached */}
+              {adStatus.reason === 'DAILY_LIMIT_REACHED' ? (
+                <div
+                  style={{
+                    padding: '14px 16px',
+                    borderRadius: 14,
+                    background: 'rgba(239, 68, 68, 0.12)',
+                    border: '1px solid rgba(239, 68, 68, 0.35)',
+                    textAlign: 'center',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: 6,
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#fca5a5', fontWeight: 700, fontSize: 14 }}>
+                    <ShieldAlert size={18} />
+                    <span>Daily Ad Limit Reached (5/5)</span>
+                  </div>
+                  <span style={{ fontSize: 12, color: '#d1d5db' }}>
+                    You have watched all 5 free video ads for today. Limit resets at midnight!
+                  </span>
+                </div>
+              ) : adStatus.reason === 'COOLDOWN' ? (
+                /* State 2: Cooldown active (under 60s) */
+                <button
+                  disabled
+                  style={{
+                    width: '100%',
+                    padding: '14px 20px',
+                    borderRadius: 9999,
+                    fontSize: 14,
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 10,
+                    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                    color: '#9ca3af',
+                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    cursor: 'not-allowed',
+                  }}
+                >
+                  <Clock size={18} />
+                  <span>NEXT AD IN {adStatus.cooldownRemainingSeconds}s</span>
+                </button>
+              ) : (
+                /* State 3: Ready to Watch */
+                <button
+                  className="gold-button"
+                  onClick={handleWatchAdClick}
+                  style={{
+                    width: '100%',
+                    padding: '14px 20px',
+                    borderRadius: 9999,
+                    fontSize: 15,
+                    fontWeight: 800,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 10,
+                    cursor: 'pointer',
+                    boxShadow: '0 0 20px rgba(251, 191, 36, 0.4)',
+                  }}
+                >
+                  <Tv size={18} fill="#1a0f02" />
+                  <span>WATCH VIDEO AD (+100 CHIPS)</span>
+                </button>
+              )}
 
               {/* Optional: Check Daily Bonus */}
               {onOpenDailyReward && (
@@ -324,7 +443,7 @@ export const FreeChipsModal: React.FC<FreeChipsModalProps> = ({
             </div>
           )}
 
-          {/* Social Casino Disclaimer Note */}
+          {/* Policy & Compliance Note */}
           <div
             style={{
               fontSize: 11,
@@ -338,7 +457,7 @@ export const FreeChipsModal: React.FC<FreeChipsModalProps> = ({
             }}
           >
             <AlertCircle size={12} style={{ flexShrink: 0 }} />
-            <span>Chips are virtual game currency with zero real-world monetary value.</span>
+            <span>Ad limit of 5/day &amp; 60s cooldown protects against invalid traffic.</span>
           </div>
         </motion.div>
       </div>
