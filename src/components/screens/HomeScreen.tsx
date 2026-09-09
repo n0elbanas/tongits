@@ -215,11 +215,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             <span>SETTINGS & AUDIO</span>
           </button>
         </div>
-
-        {/* Footer info */}
-        <div style={{ fontSize: 11, color: 'rgba(255, 255, 255, 0.4)', textAlign: 'center' }}>
-          Pagat Canonical Rules • 3 Players • Standard 52-Card Deck
-        </div>
       </motion.div>
     </div>
   );

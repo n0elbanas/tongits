@@ -10,6 +10,8 @@ import { DEFAULT_AVATARS, OPTIONAL_AVATARS, getAvatarData } from '../../game/ava
 interface SetupModalProps {
   isOpen: boolean;
   onClose: () => void;
+  initialPlayerName?: string;
+  initialPlayerAvatar?: string;
   onStartGame: (config: {
     playerName: string;
     playerAvatar: string;
@@ -22,12 +24,26 @@ interface SetupModalProps {
 export const SetupModal: React.FC<SetupModalProps> = ({
   isOpen,
   onClose,
+  initialPlayerName,
+  initialPlayerAvatar,
   onStartGame,
 }) => {
-  const [playerName, setPlayerName] = useState('Player 1');
-  const [playerAvatar, setPlayerAvatar] = useState('avatar-1');
+  const [playerName, setPlayerName] = useState(initialPlayerName || 'Player');
+  const [playerAvatar, setPlayerAvatar] = useState(initialPlayerAvatar || 'avatar-1');
   const [avatarCategory, setAvatarCategory] = useState<'DEFAULT' | 'OPTIONAL'>('DEFAULT');
   const [difficulty, setDifficulty] = useState<AIDifficulty>('MEDIUM');
+
+  useEffect(() => {
+    if (isOpen) {
+      const storedName = localStorage.getItem('tongits_player_name');
+      const storedAvatar = localStorage.getItem('tongits_player_avatar');
+      if (initialPlayerName) setPlayerName(initialPlayerName);
+      else if (storedName) setPlayerName(storedName);
+
+      if (initialPlayerAvatar) setPlayerAvatar(initialPlayerAvatar);
+      else if (storedAvatar) setPlayerAvatar(storedAvatar);
+    }
+  }, [isOpen, initialPlayerName, initialPlayerAvatar]);
 
   // We track bots by ID to dynamically filter out player's avatar
   const [bot1Id, setBot1Id] = useState<string>('bot-marco'); // Marco has avatar-5
@@ -84,8 +100,11 @@ export const SetupModal: React.FC<SetupModalProps> = ({
 
   const handleStart = () => {
     soundManager.playButtonClick();
+    const finalName = playerName.trim() || 'Player';
+    localStorage.setItem('tongits_player_name', finalName);
+    localStorage.setItem('tongits_player_avatar', playerAvatar);
     onStartGame({
-      playerName: playerName.trim() || 'Player 1',
+      playerName: finalName,
       playerAvatar,
       bot1: { ...selectedBot1, difficulty },
       bot2: { ...selectedBot2, difficulty },
@@ -163,6 +182,35 @@ export const SetupModal: React.FC<SetupModalProps> = ({
 
           {/* ── Your Character Section ── */}
           <div style={{ background: 'rgba(0,0,0,0.25)', padding: 'clamp(10px, 2.5vw, 14px)', borderRadius: 16, border: '1px solid rgba(245,158,11,0.15)' }}>
+            {/* Player Name Field */}
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                <label style={{ fontSize: 11, fontWeight: 800, color: '#fbbf24', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  Player Name
+                </label>
+                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>{playerName.length}/16</span>
+              </div>
+              <input
+                type="text"
+                value={playerName}
+                maxLength={16}
+                placeholder="Enter player name..."
+                onChange={(e) => setPlayerName(e.target.value)}
+                style={{
+                  width: '100%',
+                  boxSizing: 'border-box',
+                  padding: '9px 14px',
+                  borderRadius: 10,
+                  backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                  border: '1px solid rgba(245, 158, 11, 0.35)',
+                  color: '#fff',
+                  fontSize: 14,
+                  fontWeight: 600,
+                  outline: 'none',
+                }}
+              />
+            </div>
+
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, flexWrap: 'wrap', gap: 8 }}>
               <label style={{ fontSize: 12, fontWeight: 800, color: '#fbbf24', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                 Your Character

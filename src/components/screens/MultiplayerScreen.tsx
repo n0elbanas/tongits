@@ -47,6 +47,8 @@ interface MultiplayerScreenProps {
     isServerMultiplayer?: boolean;
     serverPlayerId?: string;
   }) => void;
+  playerName?: string;
+  playerAvatar?: string;
 }
 
 const DEFAULT_SAMPLE_ROOMS: MultiplayerTableData[] = [
@@ -91,7 +93,12 @@ interface ChatMsg {
   isSelf?: boolean;
 }
 
-export const MultiplayerScreen: React.FC<MultiplayerScreenProps> = ({ onBack, onJoinTable }) => {
+export const MultiplayerScreen: React.FC<MultiplayerScreenProps> = ({
+  onBack,
+  onJoinTable,
+  playerName = 'Player',
+  playerAvatar = 'avatar-1',
+}) => {
   // Server connection & room state
   const [isConnected, setIsConnected] = useState(wsTransport.isConnected());
   const [serverRooms, setServerRooms] = useState<PublicRoomInfo[]>([]);
@@ -178,8 +185,8 @@ export const MultiplayerScreen: React.FC<MultiplayerScreenProps> = ({ onBack, on
         ante: currentRoom?.ante || initialState.ante || 5,
         roomCode: currentRoom?.code || 'ONLINE',
         ping: '18ms',
-        playerName: initialState.players.find((p) => p.id === pId)?.name || 'You',
-        playerAvatar: initialState.players.find((p) => p.id === pId)?.avatar || 'avatar_1',
+        playerName: initialState.players.find((p) => p.id === pId)?.name || playerName || 'Player',
+        playerAvatar: initialState.players.find((p) => p.id === pId)?.avatar || playerAvatar || 'avatar-1',
         opponent1: {
           name: opp1.name,
           avatar: opp1.avatar,
@@ -234,8 +241,8 @@ export const MultiplayerScreen: React.FC<MultiplayerScreenProps> = ({ onBack, on
     soundManager.playButtonClick();
     wsTransport.joinRoom({
       roomCode: table.code,
-      playerName: 'You',
-      playerAvatar: 'avatar_1',
+      playerName: playerName || 'Player',
+      playerAvatar: playerAvatar || 'avatar-1',
     });
   };
 
@@ -247,8 +254,8 @@ export const MultiplayerScreen: React.FC<MultiplayerScreenProps> = ({ onBack, on
       tableName: newTableName.trim() || 'Custom Room',
       ante: newAnte,
       isPrivate: isPrivateRoom,
-      playerName: 'You',
-      playerAvatar: 'avatar_1',
+      playerName: playerName || 'Player',
+      playerAvatar: playerAvatar || 'avatar-1',
     });
     setIsCreateModalOpen(false);
   };
@@ -267,8 +274,8 @@ export const MultiplayerScreen: React.FC<MultiplayerScreenProps> = ({ onBack, on
         if (openServerRoom) {
           wsTransport.joinRoom({
             roomCode: openServerRoom.code,
-            playerName: 'You',
-            playerAvatar: 'avatar_1',
+            playerName: playerName || 'Player',
+            playerAvatar: playerAvatar || 'avatar-1',
           });
         } else {
           // Auto create a casual table
@@ -276,8 +283,8 @@ export const MultiplayerScreen: React.FC<MultiplayerScreenProps> = ({ onBack, on
             tableName: 'Quick Match Table',
             ante: 5,
             isPrivate: false,
-            playerName: 'You',
-            playerAvatar: 'avatar_1',
+            playerName: playerName || 'Player',
+            playerAvatar: playerAvatar || 'avatar-1',
           });
         }
       }, 750);
@@ -292,8 +299,8 @@ export const MultiplayerScreen: React.FC<MultiplayerScreenProps> = ({ onBack, on
     soundManager.playButtonClick();
     wsTransport.joinRoom({
       roomCode: code,
-      playerName: 'You',
-      playerAvatar: 'avatar_1',
+      playerName: playerName || 'Player',
+      playerAvatar: playerAvatar || 'avatar-1',
     });
     setRoomCodeInput('');
   };
@@ -400,8 +407,23 @@ export const MultiplayerScreen: React.FC<MultiplayerScreenProps> = ({ onBack, on
           </h2>
         </div>
 
-        {/* Server Status Badge */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        {/* Player Profile & Server Status */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '4px 12px 4px 6px',
+              borderRadius: 20,
+              background: 'rgba(255, 255, 255, 0.06)',
+              border: '1px solid rgba(245, 158, 11, 0.3)',
+            }}
+          >
+            <PlayerAvatar avatarId={playerAvatar} name={playerName} size={26} showStatusRing={false} />
+            <span style={{ fontSize: 13, fontWeight: 700, color: '#fbbf24' }}>{playerName}</span>
+          </div>
+
           <div
             style={{
               display: 'flex',

@@ -5,6 +5,7 @@ import { SettingsScreen } from './components/screens/SettingsScreen';
 import { MultiplayerScreen } from './components/screens/MultiplayerScreen';
 import { GameTable } from './components/screens/GameTable';
 import { SetupModal } from './components/modals/SetupModal';
+import { PlayerNameModal } from './components/modals/PlayerNameModal';
 import { BotProfile, BOT_PRESETS } from './game/ai/personalities';
 import { AIDifficulty } from './game/engine/gameState';
 import { DeckStyleProvider } from './context/DeckStyleContext';
@@ -16,6 +17,14 @@ type Screen = 'HOME' | 'GAME' | 'TUTORIAL' | 'SETTINGS' | 'MULTIPLAYER';
 export function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('HOME');
   const [isSetupOpen, setIsSetupOpen] = useState(false);
+  const [isNamePromptOpen, setIsNamePromptOpen] = useState(false);
+  const [namePromptTarget, setNamePromptTarget] = useState<'SOLO' | 'MULTIPLAYER'>('SOLO');
+  const [playerName, setPlayerName] = useState(() => {
+    return localStorage.getItem('tongits_player_name') || '';
+  });
+  const [playerAvatar, setPlayerAvatar] = useState(() => {
+    return localStorage.getItem('tongits_player_avatar') || 'avatar-1';
+  });
   const [returnToScreen, setReturnToScreen] = useState<Screen>('HOME');
   const [gameConfig, setGameConfig] = useState<{
     playerName: string;
@@ -31,8 +40,8 @@ export function App() {
     roomCode?: string;
     ping?: string;
   }>({
-    playerName: 'You',
-    playerAvatar: 'avatar-1',
+    playerName: localStorage.getItem('tongits_player_name') || 'Player',
+    playerAvatar: localStorage.getItem('tongits_player_avatar') || 'avatar-1',
     bot1: BOT_PRESETS[0], // Marco (Aggressive)
     bot2: BOT_PRESETS[1], // Sofia (Conservative)
     difficulty: 'MEDIUM',
@@ -109,14 +118,36 @@ export function App() {
     setCurrentScreen('GAME');
   };
 
+  const handlePlaySoloClick = () => {
+    setNamePromptTarget('SOLO');
+    setIsNamePromptOpen(true);
+  };
+
+  const handleMultiplayerClick = () => {
+    setNamePromptTarget('MULTIPLAYER');
+    setIsNamePromptOpen(true);
+  };
+
+  const handleNameConfirm = (name: string, avatarId: string) => {
+    setPlayerName(name);
+    setPlayerAvatar(avatarId);
+    setIsNamePromptOpen(false);
+
+    if (namePromptTarget === 'SOLO') {
+      setIsSetupOpen(true);
+    } else {
+      setCurrentScreen('MULTIPLAYER');
+    }
+  };
+
   return (
     <DeckStyleProvider>
       <div style={{ width: '100%', height: '100%' }}>
         <OrientationPrompt />
         {currentScreen === 'HOME' && (
           <HomeScreen
-            onPlaySolo={() => setIsSetupOpen(true)}
-            onMultiplayer={() => setCurrentScreen('MULTIPLAYER')}
+            onPlaySolo={handlePlaySoloClick}
+            onMultiplayer={handleMultiplayerClick}
             onHowToPlay={() => setCurrentScreen('TUTORIAL')}
             onSettings={() => setCurrentScreen('SETTINGS')}
           />
@@ -134,6 +165,8 @@ export function App() {
           <MultiplayerScreen
             onBack={() => setCurrentScreen('HOME')}
             onJoinTable={handleStartMultiplayerTable}
+            playerName={playerName || 'Player'}
+            playerAvatar={playerAvatar || 'avatar-1'}
           />
         )}
 
@@ -144,9 +177,20 @@ export function App() {
           />
         )}
 
+        <PlayerNameModal
+          isOpen={isNamePromptOpen}
+          onClose={() => setIsNamePromptOpen(false)}
+          onConfirm={handleNameConfirm}
+          initialName={playerName}
+          initialAvatar={playerAvatar}
+          mode={namePromptTarget}
+        />
+
         <SetupModal
           isOpen={isSetupOpen}
           onClose={() => setIsSetupOpen(false)}
+          initialPlayerName={playerName}
+          initialPlayerAvatar={playerAvatar}
           onStartGame={handleStartGame}
         />
       </div>
