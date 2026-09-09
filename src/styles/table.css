@@ -597,7 +597,7 @@
   }
 
   .player-hand-container {
-    height: clamp(74px, 20dvh, 88px);
+    height: clamp(86px, 23dvh, 102px);
     padding: 0 8px;
     margin: 0 auto;
   }
@@ -624,7 +624,7 @@
   }
 
   .player-hand-container {
-    height: clamp(66px, 18dvh, 78px);
+    height: clamp(78px, 20dvh, 90px);
   }
 
   .human-player-badge {

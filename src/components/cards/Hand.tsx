@@ -32,19 +32,19 @@ export const Hand: React.FC<HandProps> = ({
             // Calculate subtle dynamic fan angle and horizontal overlap
             const middleIndex = (cardCount - 1) / 2;
             const offsetFromMiddle = index - middleIndex;
-            const rotationDeg = cardCount > 1 ? offsetFromMiddle * 0.75 : 0;
-            const yOffset = Math.abs(offsetFromMiddle) * 0.35;
+            const rotationDeg = cardCount > 1 ? offsetFromMiddle * 0.65 : 0;
+            const yOffset = Math.abs(offsetFromMiddle) * 0.25;
 
             const dynamicMarginLeft =
               index === 0
                 ? 0
                 : cardCount > 11
-                ? 'clamp(-36px, -4.8vw, -22px)'
+                ? 'clamp(-34px, -4.2vw, -24px)'
                 : cardCount > 8
-                ? 'clamp(-30px, -4.0vw, -18px)'
+                ? 'clamp(-28px, -3.5vw, -20px)'
                 : cardCount > 5
-                ? 'clamp(-24px, -3.2vw, -14px)'
-                : 'clamp(-18px, -2.4vw, -10px)';
+                ? 'clamp(-22px, -2.8vw, -14px)'
+                : 'clamp(-16px, -2.0vw, -8px)';
 
             return (
               <motion.div
