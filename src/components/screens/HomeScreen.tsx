@@ -254,46 +254,45 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ type: 'spring', damping: 20, stiffness: 200 }}
       >
-        {/* Emblem & Title */}
-        <div style={{ textAlign: 'center' }}>
+        {/* Game Icon & Title */}
+        <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.1, type: 'spring' }}
-            style={{
-              width: 'clamp(40px, 7.5vw, 50px)',
-              height: 'clamp(40px, 7.5vw, 50px)',
-              borderRadius: '50%',
-              backgroundColor: '#133e31',
-              border: '2px solid #fbbf24',
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 0 20px rgba(251, 191, 36, 0.5)',
-              marginBottom: 4,
-            }}
+            initial={{ scale: 0.7, opacity: 0, y: -10 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            transition={{ delay: 0.1, type: 'spring', damping: 14, stiffness: 180 }}
+            style={{ position: 'relative', display: 'inline-block' }}
           >
-            <Sparkles size={20} color="#fbbf24" />
+            <img
+              src="/icon.png"
+              alt="Tongits"
+              style={{
+                width: 'clamp(95px, 18vw, 125px)',
+                height: 'auto',
+                filter: 'drop-shadow(0 8px 20px rgba(0, 0, 0, 0.75)) drop-shadow(0 0 25px rgba(251, 191, 36, 0.3))',
+                userSelect: 'none',
+                pointerEvents: 'none',
+              }}
+            />
           </motion.div>
 
           <h1
             className="gold-gradient-text"
             style={{
               fontFamily: 'var(--font-serif)',
-              fontSize: 'clamp(26px, 6.5vw, 38px)',
+              fontSize: 'clamp(24px, 5.5vw, 34px)',
               fontWeight: 900,
               letterSpacing: '0.08em',
               lineHeight: 1.15,
               padding: '2px 8px',
               display: 'inline-block',
-              margin: 0,
+              margin: '4px 0 0 0',
             }}
           >
-            TONG ITS
+            Tongits
           </h1>
           <p
             style={{
-              fontSize: 'clamp(10.5px, 2.2vw, 12px)',
+              fontSize: 'clamp(10px, 2.1vw, 11.5px)',
               fontWeight: 600,
               color: '#fbbf24',
               letterSpacing: '0.12em',

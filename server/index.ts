@@ -185,5 +185,5 @@ wss.on('connection', (ws: WebSocket) => {
 });
 
 server.listen(PORT, HOST, () => {
-  console.log(`[Tong-Its Server] WebSocket server listening on ws://${HOST}:${PORT}/ws`);
+  console.log(`[Tongits Server] WebSocket server listening on ws://${HOST}:${PORT}/ws`);
 });

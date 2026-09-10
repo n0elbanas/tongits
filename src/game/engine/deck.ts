@@ -31,7 +31,7 @@ export function dealCards(
   playerIds: string[]
 ): DealResult {
   if (playerIds.length !== 3) {
-    throw new Error('Tong-its requires exactly 3 players');
+    throw new Error('Tongits requires exactly 3 players');
   }
   if (!playerIds.includes(dealerId)) {
     throw new Error('Dealer must be one of the 3 players');
@@ -49,7 +49,7 @@ export function dealCards(
   const deckCopy = [...deck];
 
   // Dealing order starts with dealer or counter-clockwise from dealer.
-  // Standard card dealing in Tong-its: 13 for dealer, 12 for others.
+  // Standard card dealing in Tongits: 13 for dealer, 12 for others.
   // We can deal one by one or in blocks, resulting in:
   hands[dealerId] = deckCopy.splice(0, 13);
   const otherPlayers = playerIds.filter((id) => id !== dealerId);

@@ -189,7 +189,7 @@ export const OrientationPrompt: React.FC = () => {
                   <span style={{ color: '#ef4444' }}>♥</span>
                 </div>
                 <div style={{ fontSize: 9, fontWeight: 900, color: 'rgba(255,255,255,0.7)', letterSpacing: 0.5 }}>
-                  TONG-ITS
+                  Tongits
                 </div>
               </div>
 
@@ -278,7 +278,7 @@ export const OrientationPrompt: React.FC = () => {
                 margin: 0,
               }}
             >
-              Tong-Its is built for widescreen gameplay. Turn your phone sideways for larger cards, full table view, and effortless play.
+              Tongits is built for widescreen gameplay. Turn your phone sideways for larger cards, full table view, and effortless play.
             </p>
           </div>
 

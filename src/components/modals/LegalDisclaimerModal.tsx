@@ -133,7 +133,7 @@ export const LegalDisclaimerModal: React.FC<LegalDisclaimerModalProps> = ({ isOp
                 <Sparkles size={14} /> 1. Strictly No Real-Money Gambling & No Cash-Outs
               </strong>
               <p style={{ margin: '4px 0 0 0' }}>
-                All chips, points, and rewards in Tong-Its are 100% virtual and exist strictly for digital gameplay. Virtual chips
+                All chips, points, and rewards in Tongits are 100% virtual and exist strictly for digital gameplay. Virtual chips
                 <strong> cannot be converted, redeemed, transferred, or cashed out</strong> for real-world currency, tangible goods, or physical prizes under any circumstances.
               </p>
             </div>

@@ -1,4 +1,4 @@
-# 🎴 Tong-Its Casino (Classic Filipino Card Game)
+# 🎴 Tongits Casino (Classic Filipino Card Game)
 
 [![React 19](https://img.shields.io/badge/React-19.2-61dafb?logo=react)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-6.0-3178c6?logo=typescript)](https://www.typescriptlang.org/)
@@ -6,13 +6,13 @@
 [![Vitest](https://img.shields.io/badge/Tests-30%20Passing-brightgreen?logo=vitest)](https://vitest.dev/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A modern, tactile, single-page web implementation of **Tong-Its**, the beloved 3-player rummy card game from the Philippines. Built with **React 19**, **TypeScript**, and **Vite**, featuring authentic game rules, intelligent heuristic AI bots, multiplayer waiting lobbies, rich velvet felt aesthetics, custom card decks, and mobile landscape optimization.
+A modern, tactile, single-page web implementation of **Tongits**, the beloved 3-player rummy card game from the Philippines. Built with **React 19**, **TypeScript**, and **Vite**, featuring authentic game rules, intelligent heuristic AI bots, multiplayer waiting lobbies, rich velvet felt aesthetics, custom card decks, and mobile landscape optimization.
 
 ---
 
 ## ✨ Features
 
-### 🃏 Authentic Tong-Its Rules Engine
+### 🃏 Authentic Tongits Rules Engine
 - **Accurate Dealing**: 13 cards dealt to the dealer, 12 cards to each of the two other players.
 - **Melds (*Bahay*)**: Form valid 3+ card sets (Three-of-a-Kind, Four-of-a-Kind) and straight flushes/runs in the same suit.
 - **Sapaw (Lay-Off)**: Add cards from your hand onto your own or opponents' exposed melds on the table.
@@ -21,7 +21,7 @@ A modern, tactile, single-page web implementation of **Tong-Its**, the beloved 3
   - You cannot call Draw if you took a discarded card on the current turn (*Sapped/Bawal*).
   - Opponents can either **Fold** or **Challenge** if their deadwood count is competitive.
 - **End-Game Scoring & Showdown**:
-  - **Tong-Its**: Emptying your entire hand through melds, sapaw, and final discard.
+  - **Tongits**: Emptying your entire hand through melds, sapaw, and final discard.
   - **Stock Out**: When the draw pile runs dry, the player with the lowest deadwood score wins the side pot.
   - **Burn Penalty (*Sunog*)**: Players who fail to expose a meld by the end of the round receive maximum penalty points.
 
@@ -82,13 +82,13 @@ TongIts/
 │   │   │   ├── DrawModal.tsx            # Fold vs Challenge response modal
 │   │   │   ├── ScoreboardModal.tsx      # Round summary & deadwood score breakdown
 │   │   │   ├── SetupModal.tsx           # Solo match setup & avatar selection
-│   │   │   └── VictoryModal.tsx         # Tong-Its victory banner & confetti
+│   │   │   └── VictoryModal.tsx         # Tongits victory banner & confetti
 │   │   ├── screens/
 │   │   │   ├── GameTable.tsx            # Main felt surface & game orchestrator
 │   │   │   ├── HomeScreen.tsx           # Casino main menu & game mode selection
 │   │   │   ├── MultiplayerScreen.tsx    # Online lobby, room browser & waiting room
 │   │   │   ├── SettingsScreen.tsx       # Card face, card back, and audio settings
-│   │   │   └── TutorialScreen.tsx       # Interactive guide to Tong-Its rules
+│   │   │   └── TutorialScreen.tsx       # Interactive guide to Tongits rules
 │   │   ├── table/
 │   │   │   ├── DiscardPile.tsx          # Interactive discard pile & dump history
 │   │   │   ├── MeldArea.tsx             # Table exposed melds with Sapaw targeting
@@ -168,7 +168,7 @@ npm run build
 
 ## 🌐 Real-Time Multiplayer Backend & Deployment (Hostinger VPS with Caddy)
 
-Tong-Its includes both a high-performance static frontend and an **authoritative Node.js WebSocket backend** (`server/index.ts`) supporting live 3-player rooms, 6-character room codes, anti-cheat card masking, and hybrid human/AI matchmaking.
+Tongits includes both a high-performance static frontend and an **authoritative Node.js WebSocket backend** (`server/index.ts`) supporting live 3-player rooms, 6-character room codes, anti-cheat card masking, and hybrid human/AI matchmaking.
 
 ---
 
@@ -265,7 +265,7 @@ nano /etc/systemd/system/tongits-server.service
 Paste the following configuration:
 ```ini
 [Unit]
-Description=Tong-Its Real-Time WebSocket Game Server
+Description=Tongits Real-Time WebSocket Game Server
 After=network.target
 
 [Service]
@@ -338,7 +338,7 @@ systemctl enable caddy
 
 ---
 
-## 📜 How to Play Tong-Its (Quick Guide)
+## 📜 How to Play Tongits (Quick Guide)
 
 1. **The Objective**: Minimize the total point value of unmelded cards (*deadwood*) in your hand or empty your hand completely before the draw pile is exhausted.
 2. **Card Values**:
@@ -351,7 +351,7 @@ systemctl enable caddy
    - **Sapaw (Optional)**: Extend any exposed meld on the table with cards from your hand.
    - **Discard**: End your turn by throwing one card into the discard pile.
 4. **Winning**:
-   - **Tong-Its**: Expose or lay off every card in your hand with a final discard.
+   - **Tongits**: Expose or lay off every card in your hand with a final discard.
    - **Draw Call**: Challenge opponents when you believe your deadwood score is the lowest.
    - **Stock Out**: Lowest remaining points when the draw pile runs out wins the pot.
 

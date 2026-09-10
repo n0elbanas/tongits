@@ -28,7 +28,7 @@ export const ScoreboardModal: React.FC<ScoreboardModalProps> = ({
   const getWinReasonTitle = (reason: string) => {
     switch (reason) {
       case 'TONGITS':
-        return 'TONG-ITS VICTORY';
+        return 'TONGITS VICTORY';
       case 'DRAW_NO_CHALLENGE':
         return 'DRAW (ALL FOLDED)';
       case 'DRAW_WON_CHALLENGE':

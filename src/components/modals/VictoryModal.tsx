@@ -154,7 +154,7 @@ export const VictoryModal: React.FC<VictoryModalProps> = ({
                 whiteSpace: 'nowrap',
               }}
             >
-              TONG ITS!
+              TONGITS!
             </h1>
             <p
               style={{

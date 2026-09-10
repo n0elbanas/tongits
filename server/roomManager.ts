@@ -356,7 +356,7 @@ export class RoomManager {
     }
 
     if (room.players.length !== 3) {
-      return { success: false, error: '3 players are required to start Tong-Its (add bots or invite players).' };
+      return { success: false, error: '3 players are required to start Tongits (add bots or invite players).' };
     }
 
     const unreadyPlayer = room.players.find((p) => !p.isReady);

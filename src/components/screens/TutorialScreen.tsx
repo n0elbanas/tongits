@@ -128,7 +128,7 @@ export const TutorialScreen: React.FC<TutorialScreenProps> = ({ onBack }) => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <h3 style={{ color: '#fbbf24', fontSize: 18 }}>Game Overview</h3>
               <p>
-                <strong>Tong-its</strong> is a popular 3-player rummy card game in the Philippines using a standard 52-card deck (no jokers).
+                <strong>Tongits</strong> is a popular 3-player rummy card game in the Philippines using a standard 52-card deck (no jokers).
               </p>
               <ul style={{ paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 6 }}>
                 <li>The dealer receives <strong>13 cards</strong> and starts the round. Other 2 players receive <strong>12 cards</strong> each.</li>
@@ -137,7 +137,7 @@ export const TutorialScreen: React.FC<TutorialScreenProps> = ({ onBack }) => {
                   Your goal is to form valid card combinations (<strong>Melds</strong>), lay off cards onto table melds (<strong>Sapaw</strong>), and minimize your unmelded cards (<strong>Deadwood</strong>).
                 </li>
                 <li>
-                  You win by clearing all cards (<strong>Tong-its!</strong>), having the lowest deadwood when the stock runs out, or successfully calling <strong>Draw</strong>.
+                  You win by clearing all cards (<strong>Tongits!</strong>), having the lowest deadwood when the stock runs out, or successfully calling <strong>Draw</strong>.
                 </li>
               </ul>
             </div>
@@ -262,7 +262,7 @@ export const TutorialScreen: React.FC<TutorialScreenProps> = ({ onBack }) => {
               <h3 style={{ color: '#fbbf24', fontSize: 18 }}>Canonical Scoring & Side Pot</h3>
               <ul style={{ paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 6 }}>
                 <li><strong>Base Win:</strong> Winner collects +1 chip from each loser.</li>
-                <li><strong>Tong-its Win:</strong> +3 chips from each loser.</li>
+                <li><strong>Tongits Win:</strong> +3 chips from each loser.</li>
                 <li><strong>Draw Challenge Win:</strong> +3 chips from each challenger.</li>
                 <li><strong>Ace Bonus:</strong> +1 chip for every Ace in winner's hand and exposed melds.</li>
                 <li><strong>Secret 4-of-a-Kind:</strong> +3 chips for holding 4 of the same rank in hand.</li>

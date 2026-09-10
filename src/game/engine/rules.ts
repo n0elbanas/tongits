@@ -664,7 +664,7 @@ function triggerTongitsWin(state: GameState, winnerId: string): GameState {
     playerId: winnerId,
     type: 'TONGITS',
     timestamp: Date.now(),
-    description: `${getPlayer(state, winnerId)?.name} scored TONG-ITS!`,
+    description: `${getPlayer(state, winnerId)?.name} scored TONGITS!`,
   };
   return finalizeRound(
     {

@@ -11,7 +11,7 @@ export interface ShowdownEvaluation {
 }
 
 /**
- * Checks if a player has achieved Tong-its (0 cards in hand).
+ * Checks if a player has achieved Tongits (0 cards in hand).
  */
 export function isTongits(player: Player): boolean {
   return player.hand.length === 0;
@@ -164,7 +164,7 @@ export function evaluateStockExhaustion(state: GameState): ShowdownEvaluation {
 }
 
 /**
- * Evaluates an immediate Tong-its win.
+ * Evaluates an immediate Tongits win.
  */
 export function evaluateTongits(state: GameState, winnerId: string): ShowdownEvaluation {
   const deadwoods: Record<string, number> = {};
