@@ -52,56 +52,81 @@ describe('Chip Bankroll & Daily Reward Economy', () => {
     expect(nextStatus.hoursUntilNextClaim).toBeGreaterThan(0);
   });
 
-  it('enforces 5 ads/day limit and 60-second cooldown between watches', () => {
-    // 1. Initial state
+  it('enforces 5 ads/day limit and progressive cooldowns of 1, 3, 5, and 7 minutes', () => {
+    // 1. Initial state: 0 watched, 0 cooldown
     let adStatus = chipBankroll.getRewardedAdStatus();
     expect(adStatus.canWatch).toBe(true);
     expect(adStatus.remainingToday).toBe(MAX_DAILY_REWARDED_ADS);
     expect(adStatus.cooldownRemainingSeconds).toBe(0);
     expect(adStatus.reason).toBe('READY');
 
-    // 2. Watch 1st ad
-    const success1 = chipBankroll.recordRewardedAdWatch();
-    expect(success1).toBe(true);
+    let currentVirtualTime = 1000000;
+    vi.spyOn(Date, 'now').mockImplementation(() => currentVirtualTime);
 
-    // Immediately in cooldown
+    // 2. Watch 1st ad -> Cooldown tier 1: 1 minute (60s)
+    expect(chipBankroll.recordRewardedAdWatch()).toBe(true);
     adStatus = chipBankroll.getRewardedAdStatus();
     expect(adStatus.canWatch).toBe(false);
     expect(adStatus.remainingToday).toBe(4);
-    expect(adStatus.cooldownRemainingSeconds).toBeGreaterThan(0);
-    expect(adStatus.cooldownRemainingSeconds).toBeLessThanOrEqual(AD_COOLDOWN_SECONDS);
+    expect(adStatus.cooldownRemainingSeconds).toBe(60);
     expect(adStatus.reason).toBe('COOLDOWN');
 
-    // Cannot watch again during cooldown
-    const rejectedDuringCooldown = chipBankroll.recordRewardedAdWatch();
-    expect(rejectedDuringCooldown).toBe(false);
-
-    // 3. Fast-forward past cooldown (simulate 61s elapsed)
-    const now = Date.now();
-    let currentVirtualTime = now + 61000;
-    vi.spyOn(Date, 'now').mockImplementation(() => currentVirtualTime);
-
+    // Advance 61s past 1st cooldown
+    currentVirtualTime += 61000;
     adStatus = chipBankroll.getRewardedAdStatus();
     expect(adStatus.canWatch).toBe(true);
-    expect(adStatus.remainingToday).toBe(4);
-    expect(adStatus.cooldownRemainingSeconds).toBe(0);
     expect(adStatus.reason).toBe('READY');
 
-    // 4. Watch remaining 4 ads with time jumps
-    for (let i = 2; i <= 5; i++) {
-      const watched = chipBankroll.recordRewardedAdWatch();
-      expect(watched).toBe(true);
-      currentVirtualTime += 61000;
-    }
+    // 3. Watch 2nd ad -> Cooldown tier 2: 3 minutes (180s)
+    expect(chipBankroll.recordRewardedAdWatch()).toBe(true);
+    adStatus = chipBankroll.getRewardedAdStatus();
+    expect(adStatus.canWatch).toBe(false);
+    expect(adStatus.remainingToday).toBe(3);
+    expect(adStatus.cooldownRemainingSeconds).toBe(180);
+    expect(adStatus.reason).toBe('COOLDOWN');
 
-    // 5. Check daily limit reached
+    // Advance 181s past 2nd cooldown
+    currentVirtualTime += 181000;
+    adStatus = chipBankroll.getRewardedAdStatus();
+    expect(adStatus.canWatch).toBe(true);
+    expect(adStatus.reason).toBe('READY');
+
+    // 4. Watch 3rd ad -> Cooldown tier 3: 5 minutes (300s)
+    expect(chipBankroll.recordRewardedAdWatch()).toBe(true);
+    adStatus = chipBankroll.getRewardedAdStatus();
+    expect(adStatus.canWatch).toBe(false);
+    expect(adStatus.remainingToday).toBe(2);
+    expect(adStatus.cooldownRemainingSeconds).toBe(300);
+    expect(adStatus.reason).toBe('COOLDOWN');
+
+    // Advance 301s past 3rd cooldown
+    currentVirtualTime += 301000;
+    adStatus = chipBankroll.getRewardedAdStatus();
+    expect(adStatus.canWatch).toBe(true);
+    expect(adStatus.reason).toBe('READY');
+
+    // 5. Watch 4th ad -> Cooldown tier 4: 7 minutes (420s)
+    expect(chipBankroll.recordRewardedAdWatch()).toBe(true);
+    adStatus = chipBankroll.getRewardedAdStatus();
+    expect(adStatus.canWatch).toBe(false);
+    expect(adStatus.remainingToday).toBe(1);
+    expect(adStatus.cooldownRemainingSeconds).toBe(420);
+    expect(adStatus.reason).toBe('COOLDOWN');
+
+    // Advance 421s past 4th cooldown
+    currentVirtualTime += 421000;
+    adStatus = chipBankroll.getRewardedAdStatus();
+    expect(adStatus.canWatch).toBe(true);
+    expect(adStatus.reason).toBe('READY');
+
+    // 6. Watch 5th ad -> Daily limit reached (0 remaining)
+    expect(chipBankroll.recordRewardedAdWatch()).toBe(true);
     adStatus = chipBankroll.getRewardedAdStatus();
     expect(adStatus.canWatch).toBe(false);
     expect(adStatus.remainingToday).toBe(0);
     expect(adStatus.reason).toBe('DAILY_LIMIT_REACHED');
 
     // Attempting to watch 6th ad fails
-    const rejectedLimit = chipBankroll.recordRewardedAdWatch();
-    expect(rejectedLimit).toBe(false);
+    expect(chipBankroll.recordRewardedAdWatch()).toBe(false);
   });
 });

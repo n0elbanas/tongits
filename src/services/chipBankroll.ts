@@ -12,7 +12,9 @@ export const STREAK_REWARDS = [100, 150, 200, 250, 300, 400, 500];
 
 // --- Rewarded Video Ad Rate Limiting Constants ---
 export const MAX_DAILY_REWARDED_ADS = 5;
-export const AD_COOLDOWN_SECONDS = 60;
+// Progressive cooldowns: 1 min (60s), 3 min (180s), 5 min (300s), 7 min (420s)
+export const AD_COOLDOWN_TIERS_SECONDS = [60, 180, 300, 420];
+export const AD_COOLDOWN_SECONDS = 60; // default/base reference
 
 const AD_WATCH_DATE_KEY = 'tongits_ad_watch_date';
 const AD_WATCH_COUNT_KEY = 'tongits_ad_watch_count';
@@ -183,9 +185,19 @@ export const chipBankroll = {
 
     const remainingToday = Math.max(0, MAX_DAILY_REWARDED_ADS - watchedToday);
 
+    // Cooldown duration depends on how many ads watched so far:
+    // 1st ad watched -> 1 min (60s)
+    // 2nd ad watched -> 3 min (180s)
+    // 3rd ad watched -> 5 min (300s)
+    // 4th ad watched -> 7 min (420s)
+    const requiredCooldownSeconds =
+      watchedToday > 0 && watchedToday < MAX_DAILY_REWARDED_ADS
+        ? AD_COOLDOWN_TIERS_SECONDS[Math.min(watchedToday - 1, AD_COOLDOWN_TIERS_SECONDS.length - 1)]
+        : 0;
+
     const lastTs = parseInt(storage.getItem(AD_LAST_TIMESTAMP_KEY) || '0', 10);
     const elapsedSeconds = Math.floor((Date.now() - (isNaN(lastTs) ? 0 : lastTs)) / 1000);
-    const cooldownRemainingSeconds = Math.max(0, AD_COOLDOWN_SECONDS - elapsedSeconds);
+    const cooldownRemainingSeconds = Math.max(0, requiredCooldownSeconds - elapsedSeconds);
 
     if (remainingToday <= 0) {
       return {

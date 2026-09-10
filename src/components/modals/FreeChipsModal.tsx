@@ -11,6 +11,16 @@ interface FreeChipsModalProps {
   onOpenDailyReward?: () => void;
 }
 
+function formatCooldown(seconds: number): string {
+  if (seconds <= 0) return '0s';
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  if (mins > 0) {
+    return `${mins}m ${secs.toString().padStart(2, '0')}s`;
+  }
+  return `${secs}s`;
+}
+
 export const FreeChipsModal: React.FC<FreeChipsModalProps> = ({
   isOpen,
   onClose,
@@ -387,7 +397,7 @@ export const FreeChipsModal: React.FC<FreeChipsModalProps> = ({
                   }}
                 >
                   <Clock size={18} />
-                  <span>NEXT AD IN {adStatus.cooldownRemainingSeconds}s</span>
+                  <span>NEXT AD IN {formatCooldown(adStatus.cooldownRemainingSeconds)}</span>
                 </button>
               ) : (
                 /* State 3: Ready to Watch */
@@ -457,7 +467,7 @@ export const FreeChipsModal: React.FC<FreeChipsModalProps> = ({
             }}
           >
             <AlertCircle size={12} style={{ flexShrink: 0 }} />
-            <span>Ad limit of 5/day &amp; 60s cooldown protects against invalid traffic.</span>
+            <span>5 ads/day limit with progressive cooldowns (1m, 3m, 5m, 7m) protects against invalid traffic.</span>
           </div>
         </motion.div>
       </div>
