@@ -87,22 +87,23 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           position: 'relative',
           zIndex: 40,
           width: '100%',
-          maxWidth: 960,
+          maxWidth: 480,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          gap: 10,
+          gap: 8,
+          flexShrink: 0,
         }}
       >
         {/* Left Side: Avatar & Chips */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
           {/* Player Pill */}
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 8,
-              padding: '3px 10px 3px 4px',
+              gap: 6,
+              padding: '3px 8px 3px 4px',
               borderRadius: 9999,
               background: 'rgba(0, 0, 0, 0.65)',
               border: '1px solid rgba(255, 255, 255, 0.15)',
@@ -113,8 +114,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               src={avatarData.imageUrl}
               alt={playerName}
               style={{
-                width: 28,
-                height: 28,
+                width: 24,
+                height: 24,
                 borderRadius: '50%',
                 objectFit: 'cover',
                 border: '1.5px solid #fbbf24',
@@ -122,10 +123,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             />
             <span
               style={{
-                fontSize: 12,
+                fontSize: 11,
                 fontWeight: 700,
                 color: '#f3f4f6',
-                maxWidth: 90,
+                maxWidth: 80,
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
@@ -145,34 +146,34 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 6,
-              padding: '4px 10px',
+              gap: 5,
+              padding: '4px 8px',
               borderRadius: 9999,
               background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(180, 83, 9, 0.25) 100%)',
               border: '1px solid rgba(245, 158, 11, 0.45)',
               color: '#fbbf24',
-              fontSize: 12,
+              fontSize: 11.5,
               fontWeight: 800,
               cursor: 'pointer',
-              boxShadow: '0 2px 10px rgba(0, 0, 0, 0.4)',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.4)',
               transition: 'transform 0.15s ease',
             }}
           >
-            <Coins size={14} color="#fbbf24" />
+            <Coins size={13} color="#fbbf24" />
             <span>{chips.toLocaleString()}</span>
             <span
               style={{
                 backgroundColor: '#fbbf24',
                 color: '#1a0f02',
                 borderRadius: '50%',
-                width: 15,
-                height: 15,
-                fontSize: 11,
+                width: 14,
+                height: 14,
+                fontSize: 10,
                 fontWeight: 900,
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                marginLeft: 2,
+                marginLeft: 1,
               }}
             >
               +
@@ -180,95 +181,49 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           </button>
         </div>
 
-        {/* Right Side: Daily Gift & Fullscreen Button */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <button
-            onClick={() => {
-              soundManager.playButtonClick();
-              setIsDailyRewardOpen(true);
-            }}
-            title="Claim Daily Login Bonus"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              padding: '5px 12px',
-              borderRadius: 9999,
-              background: dailyStatus.canClaim
-                ? 'linear-gradient(135deg, rgba(251, 191, 36, 0.3) 0%, rgba(217, 119, 6, 0.3) 100%)'
-                : 'rgba(0, 0, 0, 0.55)',
-              border: dailyStatus.canClaim
-                ? '1.5px solid #fbbf24'
-                : '1px solid rgba(255, 255, 255, 0.15)',
-              color: dailyStatus.canClaim ? '#fbbf24' : '#9ca3af',
-              fontSize: 11,
-              fontWeight: 700,
-              cursor: 'pointer',
-              boxShadow: dailyStatus.canClaim ? '0 0 15px rgba(251, 191, 36, 0.35)' : 'none',
-              position: 'relative',
-            }}
-          >
-            <Gift size={15} color={dailyStatus.canClaim ? '#fbbf24' : '#9ca3af'} />
-            <span>Daily Gift</span>
-            {dailyStatus.canClaim && (
-              <span
-                style={{
-                  backgroundColor: '#ef4444',
-                  color: '#ffffff',
-                  fontSize: 8,
-                  fontWeight: 900,
-                  padding: '1px 4px',
-                  borderRadius: 9999,
-                  marginLeft: 2,
-                  letterSpacing: '0.04em',
-                }}
-              >
-                FREE
-              </span>
-            )}
-          </button>
-
+        {/* Right Side: Fullscreen Button */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
           <MobileFullscreenButton />
         </div>
       </header>
 
-      {/* Main Container Card */}
+      {/* Main Container Card - Mobile First Zero-Scroll */}
       <motion.div
         className="glass-panel"
         style={{
           position: 'relative',
           zIndex: 10,
           width: '100%',
-          maxWidth: 440,
-          maxHeight: '82dvh',
-          borderRadius: 'clamp(18px, 3.5vw, 26px)',
-          padding: 'clamp(16px, 2.8vh, 26px) clamp(16px, 3.5vw, 28px)',
+          maxWidth: 420,
+          borderRadius: 'clamp(16px, 3.5vw, 24px)',
+          padding: 'clamp(12px, 2vh, 20px) clamp(14px, 3.2vw, 22px)',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          gap: 'clamp(10px, 1.8vh, 18px)',
-          boxShadow: '0 25px 60px rgba(0, 0, 0, 0.9), 0 0 40px rgba(245, 158, 11, 0.15)',
-          overflowY: 'auto',
+          gap: 'clamp(8px, 1.6vh, 14px)',
+          boxShadow: '0 20px 50px rgba(0, 0, 0, 0.9), 0 0 35px rgba(245, 158, 11, 0.12)',
+          boxSizing: 'border-box',
+          margin: 'auto 0',
         }}
-        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+        initial={{ opacity: 0, scale: 0.92, y: 15 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ type: 'spring', damping: 20, stiffness: 200 }}
+        transition={{ type: 'spring', damping: 20, stiffness: 220 }}
       >
         {/* Game Icon & Title */}
         <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <motion.div
-            initial={{ scale: 0.7, opacity: 0, y: -10 }}
-            animate={{ scale: 1, opacity: 1, y: 0 }}
-            transition={{ delay: 0.1, type: 'spring', damping: 14, stiffness: 180 }}
+            initial={{ scale: 0.7, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.08, type: 'spring', damping: 14, stiffness: 180 }}
             style={{ position: 'relative', display: 'inline-block' }}
           >
             <img
               src="/icon.png"
               alt="Tongits"
               style={{
-                width: 'clamp(95px, 18vw, 125px)',
+                width: 'clamp(52px, 9.5vh, 72px)',
                 height: 'auto',
-                filter: 'drop-shadow(0 8px 20px rgba(0, 0, 0, 0.75)) drop-shadow(0 0 25px rgba(251, 191, 36, 0.3))',
+                filter: 'drop-shadow(0 6px 16px rgba(0, 0, 0, 0.75)) drop-shadow(0 0 20px rgba(251, 191, 36, 0.25))',
                 userSelect: 'none',
                 pointerEvents: 'none',
               }}
@@ -279,34 +234,32 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             className="gold-gradient-text"
             style={{
               fontFamily: 'var(--font-serif)',
-              fontSize: 'clamp(24px, 5.5vw, 34px)',
+              fontSize: 'clamp(22px, 5.2vw, 30px)',
               fontWeight: 900,
-              letterSpacing: '0.08em',
-              lineHeight: 1.15,
-              padding: '2px 8px',
-              display: 'inline-block',
-              margin: '4px 0 0 0',
+              letterSpacing: '0.06em',
+              lineHeight: 1.1,
+              margin: '2px 0 0 0',
             }}
           >
             Tongits
           </h1>
           <p
             style={{
-              fontSize: 'clamp(10px, 2.1vw, 11.5px)',
+              fontSize: 'clamp(9px, 2vw, 10.5px)',
               fontWeight: 600,
               color: '#fbbf24',
               letterSpacing: '0.12em',
               textTransform: 'uppercase',
-              marginTop: 2,
-              opacity: 0.9,
+              marginTop: 1,
+              opacity: 0.88,
             }}
           >
             Classic Filipino Card Game
           </p>
         </div>
 
-        {/* Action Buttons */}
-        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 'clamp(7px, 1.4vh, 10px)' }}>
+        {/* Primary Play Mode Buttons */}
+        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 'clamp(6px, 1.2vh, 9px)' }}>
           {/* PLAY SOLO */}
           <button
             className="gold-button"
@@ -316,20 +269,22 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             }}
             style={{
               width: '100%',
-              padding: 'clamp(11px, 1.8vh, 14px) 18px',
+              padding: 'clamp(10px, 1.6vh, 13px) 16px',
               borderRadius: 9999,
-              fontSize: 'clamp(13.5px, 2.4vw, 16px)',
+              fontSize: 'clamp(13px, 2.5vw, 15px)',
+              fontWeight: 800,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: 10,
+              gap: 8,
+              cursor: 'pointer',
             }}
           >
-            <Play size={17} fill="#1a0f02" />
+            <Play size={16} fill="#1a0f02" />
             <span>PLAY SOLO (VS BOTS)</span>
           </button>
 
-          {/* MULTIPLAYER */}
+          {/* ONLINE MULTIPLAYER */}
           <button
             className="action-btn secondary"
             onClick={() => {
@@ -338,154 +293,192 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             }}
             style={{
               width: '100%',
-              padding: 'clamp(9px, 1.6vh, 12px) 18px',
+              padding: 'clamp(8px, 1.4vh, 11px) 16px',
               borderRadius: 9999,
-              fontSize: 'clamp(12.5px, 2.1vw, 14.5px)',
+              fontSize: 'clamp(12px, 2.3vw, 13.5px)',
+              fontWeight: 700,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: 10,
+              gap: 8,
               background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(16, 185, 129, 0.15) 100%)',
               border: '1px solid rgba(245, 158, 11, 0.4)',
+              color: '#f3f4f6',
+              cursor: 'pointer',
             }}
           >
-            <Users size={17} color="#fbbf24" />
+            <Users size={15} color="#fbbf24" />
             <span>ONLINE MULTIPLAYER</span>
           </button>
+        </div>
 
-          {/* Monetization Rewards Row: Free Chips (Google H5 Ads) & Daily Reward */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, width: '100%' }}>
-            <button
-              className="action-btn secondary"
-              onClick={() => {
-                soundManager.playButtonClick();
-                setIsFreeChipsOpen(true);
-              }}
-              style={{
-                padding: '9px 12px',
-                borderRadius: 14,
-                fontSize: 'clamp(11px, 2vw, 12.5px)',
-                fontWeight: 700,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 6,
-                background: 'rgba(245, 158, 11, 0.12)',
-                border: '1px solid rgba(245, 158, 11, 0.35)',
-                color: '#fbbf24',
-              }}
-            >
-              <Tv size={14} color="#fbbf24" />
-              <span>+100 Free Chips</span>
-            </button>
-
-            <button
-              className="action-btn secondary"
-              onClick={() => {
-                soundManager.playButtonClick();
-                setIsDailyRewardOpen(true);
-              }}
-              style={{
-                padding: '9px 12px',
-                borderRadius: 14,
-                fontSize: 'clamp(11px, 2vw, 12.5px)',
-                fontWeight: 700,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 6,
-                background: dailyStatus.canClaim ? 'rgba(16, 185, 129, 0.18)' : 'rgba(255, 255, 255, 0.06)',
-                border: dailyStatus.canClaim ? '1px solid #10b981' : '1px solid rgba(255, 255, 255, 0.12)',
-                color: dailyStatus.canClaim ? '#6ee7b7' : '#d1d5db',
-              }}
-            >
-              <Gift size={14} />
-              <span>Daily Gift</span>
-              {dailyStatus.canClaim && (
-                <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#10b981' }} />
-              )}
-            </button>
-          </div>
-
-          {/* HOW TO PLAY */}
+        {/* Quick Action Icon Dock: 4 Compact Icon Buttons with smaller text */}
+        <div
+          style={{
+            width: '100%',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(4, 1fr)',
+            gap: 'clamp(5px, 1.4vw, 8px)',
+          }}
+        >
+          {/* Free Chips (+100) */}
           <button
-            className="action-btn secondary"
+            onClick={() => {
+              soundManager.playButtonClick();
+              setIsFreeChipsOpen(true);
+            }}
+            title="Free Chips Bonus"
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 3,
+              padding: 'clamp(7px, 1.2vh, 10px) 4px',
+              borderRadius: 13,
+              background: 'rgba(245, 158, 11, 0.12)',
+              border: '1px solid rgba(245, 158, 11, 0.35)',
+              color: '#fbbf24',
+              cursor: 'pointer',
+              transition: 'transform 0.15s ease, background-color 0.15s ease',
+            }}
+          >
+            <Tv size={17} color="#fbbf24" />
+            <span style={{ fontSize: 'clamp(9px, 1.9vw, 10.5px)', fontWeight: 800, whiteSpace: 'nowrap' }}>
+              Free Chips
+            </span>
+          </button>
+
+          {/* Daily Gift */}
+          <button
+            onClick={() => {
+              soundManager.playButtonClick();
+              setIsDailyRewardOpen(true);
+            }}
+            title="Daily Gift Reward"
+            style={{
+              position: 'relative',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 3,
+              padding: 'clamp(7px, 1.2vh, 10px) 4px',
+              borderRadius: 13,
+              background: dailyStatus.canClaim ? 'rgba(16, 185, 129, 0.18)' : 'rgba(255, 255, 255, 0.05)',
+              border: dailyStatus.canClaim ? '1px solid #10b981' : '1px solid rgba(255, 255, 255, 0.12)',
+              color: dailyStatus.canClaim ? '#6ee7b7' : '#d1d5db',
+              cursor: 'pointer',
+              transition: 'transform 0.15s ease, background-color 0.15s ease',
+            }}
+          >
+            <Gift size={17} color={dailyStatus.canClaim ? '#6ee7b7' : '#d1d5db'} />
+            <span style={{ fontSize: 'clamp(9px, 1.9vw, 10.5px)', fontWeight: 800, whiteSpace: 'nowrap' }}>
+              Daily Gift
+            </span>
+            {dailyStatus.canClaim && (
+              <span
+                style={{
+                  position: 'absolute',
+                  top: 4,
+                  right: 4,
+                  width: 7,
+                  height: 7,
+                  borderRadius: '50%',
+                  backgroundColor: '#10b981',
+                  boxShadow: '0 0 8px #10b981',
+                }}
+              />
+            )}
+          </button>
+
+          {/* How to Play */}
+          <button
             onClick={() => {
               soundManager.playButtonClick();
               onHowToPlay();
             }}
+            title="How to Play and Rules"
             style={{
-              width: '100%',
-              padding: 'clamp(8px, 1.5vh, 11px) 16px',
-              borderRadius: 9999,
-              fontSize: 'clamp(12px, 2vw, 13.5px)',
               display: 'flex',
+              flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: 8,
-              backgroundColor: 'rgba(255, 255, 255, 0.08)',
+              gap: 3,
+              padding: 'clamp(7px, 1.2vh, 10px) 4px',
+              borderRadius: 13,
+              background: 'rgba(255, 255, 255, 0.06)',
+              border: '1px solid rgba(255, 255, 255, 0.12)',
+              color: '#f3f4f6',
+              cursor: 'pointer',
+              transition: 'transform 0.15s ease, background-color 0.15s ease',
             }}
           >
-            <BookOpen size={15} />
-            <span>HOW TO PLAY & RULES</span>
+            <BookOpen size={17} color="#93c5fd" />
+            <span style={{ fontSize: 'clamp(9px, 1.9vw, 10.5px)', fontWeight: 700, whiteSpace: 'nowrap' }}>
+              Rules
+            </span>
           </button>
 
-          {/* SETTINGS */}
+          {/* Settings */}
           <button
-            className="action-btn secondary"
             onClick={() => {
               soundManager.playButtonClick();
               onSettings();
             }}
+            title="Settings and Audio"
             style={{
-              width: '100%',
-              padding: 'clamp(8px, 1.5vh, 11px) 16px',
-              borderRadius: 9999,
-              fontSize: 'clamp(12px, 2vw, 13.5px)',
               display: 'flex',
+              flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: 8,
-              backgroundColor: 'rgba(255, 255, 255, 0.08)',
+              gap: 3,
+              padding: 'clamp(7px, 1.2vh, 10px) 4px',
+              borderRadius: 13,
+              background: 'rgba(255, 255, 255, 0.06)',
+              border: '1px solid rgba(255, 255, 255, 0.12)',
+              color: '#f3f4f6',
+              cursor: 'pointer',
+              transition: 'transform 0.15s ease, background-color 0.15s ease',
             }}
           >
-            <Settings size={15} />
-            <span>SETTINGS & AUDIO</span>
+            <Settings size={17} color="#e5e7eb" />
+            <span style={{ fontSize: 'clamp(9px, 1.9vw, 10.5px)', fontWeight: 700, whiteSpace: 'nowrap' }}>
+              Settings
+            </span>
           </button>
         </div>
       </motion.div>
 
-      {/* Footer Legal & Regulatory Disclaimer */}
+      {/* Footer Legal & Regulatory Disclaimer - Compact Single Row */}
       <footer
         style={{
           position: 'relative',
           zIndex: 30,
           width: '100%',
-          maxWidth: 620,
+          maxWidth: 480,
           textAlign: 'center',
-          padding: '4px 12px',
+          padding: '2px 8px',
           display: 'flex',
-          flexDirection: 'column',
           alignItems: 'center',
-          gap: 4,
+          justifyContent: 'center',
+          gap: 6,
+          flexWrap: 'wrap',
+          flexShrink: 0,
         }}
       >
-        <p
+        <div
           style={{
-            margin: 0,
-            fontSize: 'clamp(10px, 1.8vw, 11.5px)',
-            lineHeight: 1.4,
-            color: 'rgba(255, 255, 255, 0.55)',
-            display: 'flex',
+            display: 'inline-flex',
             alignItems: 'center',
-            justifyContent: 'center',
-            gap: 5,
-            flexWrap: 'wrap',
+            gap: 4,
+            fontSize: 'clamp(9.5px, 1.8vw, 10.5px)',
+            color: 'rgba(255, 255, 255, 0.5)',
           }}
         >
-          <AlertCircle size={12} color="#fbbf24" style={{ flexShrink: 0 }} />
-          <span>This is a social card game for amusement purposes only. Chips have no real-world monetary value.</span>
-        </p>
+          <AlertCircle size={11} color="#fbbf24" style={{ flexShrink: 0 }} />
+          <span>Amusement only. Chips have no cash value.</span>
+        </div>
 
         <button
           onClick={() => {
@@ -496,19 +489,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             background: 'none',
             border: 'none',
             color: '#fbbf24',
-            fontSize: 'clamp(10px, 1.8vw, 11px)',
+            fontSize: 'clamp(9.5px, 1.8vw, 10.5px)',
             fontWeight: 600,
             textDecoration: 'underline',
             cursor: 'pointer',
             opacity: 0.85,
             display: 'inline-flex',
             alignItems: 'center',
-            gap: 4,
-            padding: '2px 6px',
+            gap: 3,
+            padding: '1px 3px',
           }}
         >
           <ShieldCheck size={11} />
-          <span>Legal Disclaimer & Terms</span>
+          <span>Legal</span>
         </button>
       </footer>
 

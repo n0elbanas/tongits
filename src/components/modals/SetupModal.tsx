@@ -139,27 +139,28 @@ export const SetupModal: React.FC<SetupModalProps> = ({
           className="glass-panel"
           style={{
             width: '100%',
-            maxWidth: 640,
-            borderRadius: 24,
-            padding: 'clamp(18px, 3vw, 28px)',
+            maxWidth: 540,
+            borderRadius: 20,
+            padding: 'clamp(14px, 2.5vh, 22px) clamp(14px, 3vw, 22px)',
             display: 'flex',
             flexDirection: 'column',
-            gap: 18,
-            maxHeight: '94dvh',
+            gap: 'clamp(10px, 1.8vh, 16px)',
+            maxHeight: '92dvh',
             overflowY: 'auto',
+            boxSizing: 'border-box',
           }}
-          initial={{ scale: 0.88, opacity: 0, y: 24 }}
+          initial={{ scale: 0.9, opacity: 0, y: 15 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
-          exit={{ scale: 0.88, opacity: 0 }}
+          exit={{ scale: 0.9, opacity: 0 }}
         >
           {/* Header */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
-              <h2 className="gold-gradient-text" style={{ fontFamily: 'var(--font-serif)', fontSize: 24, margin: 0 }}>
+              <h2 className="gold-gradient-text" style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(18px, 4vw, 22px)', margin: 0 }}>
                 MATCH SETUP
               </h2>
-              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', margin: '4px 0 0' }}>
-                Choose your character and solo table opponents
+              <p style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.55)', margin: '2px 0 0' }}>
+                Solo table opponents and character profile
               </p>
             </div>
             <button
@@ -176,48 +177,63 @@ export const SetupModal: React.FC<SetupModalProps> = ({
                 justifyContent: 'center',
               }}
             >
-              <X size={18} />
+              <X size={16} />
             </button>
           </div>
 
           {/* ── Your Character Section ── */}
-          <div style={{ background: 'rgba(0,0,0,0.25)', padding: 'clamp(10px, 2.5vw, 14px)', borderRadius: 16, border: '1px solid rgba(245,158,11,0.15)' }}>
-            {/* Player Name Field */}
-            <div style={{ marginBottom: 12 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                <label style={{ fontSize: 11, fontWeight: 800, color: '#fbbf24', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                  Player Name
-                </label>
-                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>{playerName.length}/16</span>
+          <div
+            style={{
+              background: 'rgba(0,0,0,0.3)',
+              padding: 'clamp(8px, 1.6vh, 12px)',
+              borderRadius: 14,
+              border: '1px solid rgba(245,158,11,0.2)',
+            }}
+          >
+            {/* Top row: Avatar Preview + Name Field + Avatar Tabs */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+              {/* Selected avatar thumbnail */}
+              <div style={{ flexShrink: 0 }}>
+                <PlayerAvatar
+                  avatarId={normalizedUserAvatar}
+                  name={playerName}
+                  size={42}
+                  status="YOUR_TURN"
+                  showStatusRing={true}
+                />
               </div>
-              <input
-                type="text"
-                value={playerName}
-                maxLength={16}
-                placeholder="Enter player name..."
-                onChange={(e) => setPlayerName(e.target.value)}
-                style={{
-                  width: '100%',
-                  boxSizing: 'border-box',
-                  padding: '9px 14px',
-                  borderRadius: 10,
-                  backgroundColor: 'rgba(0, 0, 0, 0.4)',
-                  border: '1px solid rgba(245, 158, 11, 0.35)',
-                  color: '#fff',
-                  fontSize: 14,
-                  fontWeight: 600,
-                  outline: 'none',
-                }}
-              />
-            </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, flexWrap: 'wrap', gap: 8 }}>
-              <label style={{ fontSize: 12, fontWeight: 800, color: '#fbbf24', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                Your Character
-              </label>
+              {/* Name input */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+                  <label style={{ fontSize: 10, fontWeight: 800, color: '#fbbf24', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Player Name
+                  </label>
+                  <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>{playerName.length}/16</span>
+                </div>
+                <input
+                  type="text"
+                  value={playerName}
+                  maxLength={16}
+                  placeholder="Enter name..."
+                  onChange={(e) => setPlayerName(e.target.value)}
+                  style={{
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    padding: '6px 10px',
+                    borderRadius: 8,
+                    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+                    border: '1px solid rgba(245, 158, 11, 0.3)',
+                    color: '#fff',
+                    fontSize: 13,
+                    fontWeight: 700,
+                    outline: 'none',
+                  }}
+                />
+              </div>
 
-              {/* Avatar Category Tabs */}
-              <div style={{ display: 'flex', background: 'rgba(255,255,255,0.06)', padding: 3, borderRadius: 10, gap: 4 }}>
+              {/* Avatar Category Selector */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 3, flexShrink: 0 }}>
                 <button
                   type="button"
                   onClick={() => {
@@ -225,22 +241,21 @@ export const SetupModal: React.FC<SetupModalProps> = ({
                     setAvatarCategory('DEFAULT');
                   }}
                   style={{
-                    padding: '4px 10px',
-                    borderRadius: 7,
-                    fontSize: 11,
+                    padding: '3px 8px',
+                    borderRadius: 6,
+                    fontSize: 10,
                     fontWeight: 800,
                     border: 'none',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 5,
-                    backgroundColor: avatarCategory === 'DEFAULT' ? '#fbbf24' : 'transparent',
+                    gap: 3,
+                    backgroundColor: avatarCategory === 'DEFAULT' ? '#fbbf24' : 'rgba(255,255,255,0.06)',
                     color: avatarCategory === 'DEFAULT' ? '#1a0f02' : 'rgba(255,255,255,0.6)',
-                    transition: 'all 0.18s ease',
                   }}
                 >
-                  <Users size={12} />
-                  <span>Default (10)</span>
+                  <Users size={11} />
+                  <span>Default</span>
                 </button>
                 <button
                   type="button"
@@ -249,50 +264,35 @@ export const SetupModal: React.FC<SetupModalProps> = ({
                     setAvatarCategory('OPTIONAL');
                   }}
                   style={{
-                    padding: '4px 10px',
-                    borderRadius: 7,
-                    fontSize: 11,
+                    padding: '3px 8px',
+                    borderRadius: 6,
+                    fontSize: 10,
                     fontWeight: 800,
                     border: 'none',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 5,
-                    backgroundColor: avatarCategory === 'OPTIONAL' ? '#fbbf24' : 'transparent',
+                    gap: 3,
+                    backgroundColor: avatarCategory === 'OPTIONAL' ? '#fbbf24' : 'rgba(255,255,255,0.06)',
                     color: avatarCategory === 'OPTIONAL' ? '#1a0f02' : 'rgba(255,255,255,0.6)',
-                    transition: 'all 0.18s ease',
                   }}
                 >
-                  <Sparkles size={12} />
-                  <span>More Avatars (15)</span>
+                  <Sparkles size={11} />
+                  <span>More</span>
                 </button>
               </div>
             </div>
 
-            {/* Name input */}
-            <input
-              type="text"
-              value={playerName}
-              onChange={(e) => setPlayerName(e.target.value)}
-              maxLength={16}
-              placeholder="Enter your name"
+            {/* Avatar horizontal carousel row */}
+            <div
               style={{
-                width: '100%',
-                padding: '10px 14px',
-                borderRadius: 10,
-                backgroundColor: 'rgba(0,0,0,0.4)',
-                border: '1px solid rgba(245,158,11,0.25)',
-                color: '#ffffff',
-                fontSize: 14,
-                fontWeight: 600,
-                marginBottom: 12,
-                boxSizing: 'border-box',
-                outline: 'none',
+                display: 'flex',
+                gap: 6,
+                overflowX: 'auto',
+                paddingBottom: 2,
+                scrollbarWidth: 'thin',
               }}
-            />
-
-            {/* Avatar grid — responsive auto-fill for mobile */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(58px, 1fr))', gap: 10 }}>
+            >
               {activeAvatarsList.map((av) => {
                 const isSelected = normalizedUserAvatar === av.id;
                 return (
@@ -303,46 +303,45 @@ export const SetupModal: React.FC<SetupModalProps> = ({
                       soundManager.playButtonClick();
                       setPlayerAvatar(av.id);
                     }}
-                    whileHover={{ scale: 1.05, y: -2 }}
-                    whileTap={{ scale: 0.95 }}
+                    whileTap={{ scale: 0.94 }}
                     style={{
                       position: 'relative',
+                      flex: '0 0 auto',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      padding: 4,
-                      borderRadius: 16,
-                      backgroundColor: isSelected ? 'rgba(245,158,11,0.22)' : 'rgba(255,255,255,0.04)',
+                      padding: 2,
+                      borderRadius: 12,
+                      backgroundColor: isSelected ? 'rgba(245,158,11,0.25)' : 'rgba(255,255,255,0.04)',
                       border: isSelected ? '2px solid #fbbf24' : '1px solid rgba(255,255,255,0.08)',
-                      boxShadow: isSelected ? '0 0 14px rgba(251,191,36,0.35)' : 'none',
+                      boxShadow: isSelected ? '0 0 10px rgba(251,191,36,0.35)' : 'none',
                       cursor: 'pointer',
-                      transition: 'border-color 0.2s, background-color 0.2s',
                     }}
                   >
                     <PlayerAvatar
                       avatarId={av.id}
                       name={av.name}
-                      size={52}
+                      size={40}
                       status={isSelected ? 'YOUR_TURN' : 'IDLE'}
-                      showStatusRing={isSelected}
+                      showStatusRing={false}
                     />
                     {isSelected && (
                       <div
                         style={{
                           position: 'absolute',
-                          top: 2,
-                          right: 2,
-                          width: 15,
-                          height: 15,
+                          top: 1,
+                          right: 1,
+                          width: 13,
+                          height: 13,
                           borderRadius: '50%',
                           backgroundColor: '#fbbf24',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          boxShadow: '0 2px 4px rgba(0,0,0,0.5)',
+                          boxShadow: '0 1px 3px rgba(0,0,0,0.6)',
                         }}
                       >
-                        <Check size={9} color="#1a0f02" strokeWidth={3.5} />
+                        <Check size={8} color="#1a0f02" strokeWidth={3.5} />
                       </div>
                     )}
                   </motion.button>
@@ -351,12 +350,14 @@ export const SetupModal: React.FC<SetupModalProps> = ({
             </div>
           </div>
 
-          {/* ── AI Difficulty ── */}
+          {/* ── AI Difficulty Inline Segmented Control ── */}
           <div>
-            <label style={{ fontSize: 12, fontWeight: 800, color: '#fbbf24', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 8 }}>
-              AI Difficulty
-            </label>
-            <div style={{ display: 'flex', gap: 10 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
+              <label style={{ fontSize: 11, fontWeight: 800, color: '#fbbf24', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                AI Difficulty
+              </label>
+            </div>
+            <div style={{ display: 'flex', gap: 6 }}>
               {(['EASY', 'MEDIUM', 'HARD'] as AIDifficulty[]).map((diff) => (
                 <button
                   key={diff}
@@ -367,15 +368,15 @@ export const SetupModal: React.FC<SetupModalProps> = ({
                   }}
                   style={{
                     flex: 1,
-                    padding: '9px 12px',
-                    borderRadius: 10,
+                    padding: '6px 8px',
+                    borderRadius: 8,
                     fontWeight: 800,
-                    fontSize: 13,
-                    backgroundColor: difficulty === diff ? `${difficultyColors[diff]}22` : 'rgba(255,255,255,0.05)',
-                    border: difficulty === diff ? `1.5px solid ${difficultyColors[diff]}` : '1.5px solid rgba(255,255,255,0.08)',
+                    fontSize: 11.5,
+                    backgroundColor: difficulty === diff ? `${difficultyColors[diff]}22` : 'rgba(255,255,255,0.04)',
+                    border: difficulty === diff ? `1.5px solid ${difficultyColors[diff]}` : '1px solid rgba(255,255,255,0.08)',
                     color: difficulty === diff ? difficultyColors[diff] : '#9ca3af',
                     cursor: 'pointer',
-                    transition: 'all 0.18s',
+                    transition: 'all 0.15s',
                   }}
                 >
                   {diff}
@@ -384,41 +385,41 @@ export const SetupModal: React.FC<SetupModalProps> = ({
             </div>
           </div>
 
-          {/* ── Opponents (Self-Exclusion Guaranteed) ── */}
+          {/* ── Opponents (2-Column Compact Grid) ── */}
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <label style={{ fontSize: 12, fontWeight: 800, color: '#fbbf24', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                Select Opponents (Solo 1 vs 2)
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+              <label style={{ fontSize: 11, fontWeight: 800, color: '#fbbf24', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                Opponents (Solo 1 vs 2)
               </label>
-              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>
-                Your character is excluded from bot opponents
+              <span style={{ fontSize: 9.5, color: 'rgba(255,255,255,0.4)' }}>
+                Excludes your character
               </span>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
               {/* Opponent 1 */}
-              <div style={{ background: 'rgba(255,255,255,0.03)', padding: 10, borderRadius: 14, border: '1px solid rgba(255,255,255,0.08)' }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: 6 }}>
+              <div style={{ background: 'rgba(255,255,255,0.03)', padding: '6px 8px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.08)' }}>
+                <span style={{ fontSize: 9.5, fontWeight: 700, color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: 4 }}>
                   OPPONENT 1 (Left)
                 </span>
                 <div
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 10,
-                    padding: '8px 10px',
-                    borderRadius: 10,
+                    gap: 6,
+                    padding: '4px 6px',
+                    borderRadius: 8,
                     backgroundColor: 'rgba(0,0,0,0.3)',
-                    border: '1px solid rgba(245,158,11,0.2)',
-                    marginBottom: 8,
+                    border: '1px solid rgba(245,158,11,0.15)',
+                    marginBottom: 6,
                   }}
                 >
-                  <PlayerAvatar avatarId={selectedBot1.avatar} name={selectedBot1.name} size={38} status="IDLE" showStatusRing={false} />
+                  <PlayerAvatar avatarId={selectedBot1.avatar} name={selectedBot1.name} size={28} status="IDLE" showStatusRing={false} />
                   <div style={{ overflow: 'hidden' }}>
-                    <div style={{ fontWeight: 700, fontSize: 13, color: '#f3f4f6', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <div style={{ fontWeight: 700, fontSize: 11.5, color: '#f3f4f6', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {selectedBot1.name}
                     </div>
-                    <div style={{ fontSize: 10, color: '#fbbf24', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    <div style={{ fontSize: 9, color: '#fbbf24', textTransform: 'uppercase' }}>
                       {selectedBot1.personality}
                     </div>
                   </div>
@@ -432,12 +433,12 @@ export const SetupModal: React.FC<SetupModalProps> = ({
                   }}
                   style={{
                     width: '100%',
-                    padding: '8px 10px',
-                    borderRadius: 8,
+                    padding: '5px 6px',
+                    borderRadius: 6,
                     backgroundColor: 'rgba(0,0,0,0.5)',
                     color: '#ffffff',
                     border: '1px solid rgba(245,158,11,0.25)',
-                    fontSize: 12,
+                    fontSize: 11,
                     fontWeight: 700,
                     cursor: 'pointer',
                     outline: 'none',
@@ -445,35 +446,35 @@ export const SetupModal: React.FC<SetupModalProps> = ({
                 >
                   {availableBotsForBot1.map((b) => (
                     <option key={b.id} value={b.id}>
-                      {b.name} — {b.personality}
+                      {b.name} ({b.personality.slice(0, 3)})
                     </option>
                   ))}
                 </select>
               </div>
 
               {/* Opponent 2 */}
-              <div style={{ background: 'rgba(255,255,255,0.03)', padding: 10, borderRadius: 14, border: '1px solid rgba(255,255,255,0.08)' }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: 6 }}>
+              <div style={{ background: 'rgba(255,255,255,0.03)', padding: '6px 8px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.08)' }}>
+                <span style={{ fontSize: 9.5, fontWeight: 700, color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: 4 }}>
                   OPPONENT 2 (Right)
                 </span>
                 <div
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 10,
-                    padding: '8px 10px',
-                    borderRadius: 10,
+                    gap: 6,
+                    padding: '4px 6px',
+                    borderRadius: 8,
                     backgroundColor: 'rgba(0,0,0,0.3)',
-                    border: '1px solid rgba(245,158,11,0.2)',
-                    marginBottom: 8,
+                    border: '1px solid rgba(245,158,11,0.15)',
+                    marginBottom: 6,
                   }}
                 >
-                  <PlayerAvatar avatarId={selectedBot2.avatar} name={selectedBot2.name} size={38} status="IDLE" showStatusRing={false} />
+                  <PlayerAvatar avatarId={selectedBot2.avatar} name={selectedBot2.name} size={28} status="IDLE" showStatusRing={false} />
                   <div style={{ overflow: 'hidden' }}>
-                    <div style={{ fontWeight: 700, fontSize: 13, color: '#f3f4f6', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <div style={{ fontWeight: 700, fontSize: 11.5, color: '#f3f4f6', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {selectedBot2.name}
                     </div>
-                    <div style={{ fontSize: 10, color: '#fbbf24', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    <div style={{ fontSize: 9, color: '#fbbf24', textTransform: 'uppercase' }}>
                       {selectedBot2.personality}
                     </div>
                   </div>
@@ -487,12 +488,12 @@ export const SetupModal: React.FC<SetupModalProps> = ({
                   }}
                   style={{
                     width: '100%',
-                    padding: '8px 10px',
-                    borderRadius: 8,
+                    padding: '5px 6px',
+                    borderRadius: 6,
                     backgroundColor: 'rgba(0,0,0,0.5)',
                     color: '#ffffff',
                     border: '1px solid rgba(245,158,11,0.25)',
-                    fontSize: 12,
+                    fontSize: 11,
                     fontWeight: 700,
                     cursor: 'pointer',
                     outline: 'none',
@@ -500,7 +501,7 @@ export const SetupModal: React.FC<SetupModalProps> = ({
                 >
                   {availableBotsForBot2.map((b) => (
                     <option key={b.id} value={b.id}>
-                      {b.name} — {b.personality}
+                      {b.name} ({b.personality.slice(0, 3)})
                     </option>
                   ))}
                 </select>
@@ -514,19 +515,19 @@ export const SetupModal: React.FC<SetupModalProps> = ({
             className="gold-button"
             onClick={handleStart}
             style={{
-              padding: '14px 28px',
+              padding: '11px 20px',
               borderRadius: 9999,
-              fontSize: 15,
+              fontSize: 14,
               fontWeight: 800,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               gap: 8,
-              marginTop: 4,
+              marginTop: 2,
               cursor: 'pointer',
             }}
           >
-            <Play size={18} fill="#1a0f02" />
+            <Play size={16} fill="#1a0f02" />
             <span>START MATCH</span>
           </button>
         </motion.div>

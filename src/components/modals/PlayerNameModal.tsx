@@ -75,27 +75,30 @@ export const PlayerNameModal: React.FC<PlayerNameModalProps> = ({
           className="glass-panel"
           style={{
             width: '100%',
-            maxWidth: 440,
-            borderRadius: 24,
-            padding: 'clamp(20px, 3.5vw, 28px)',
+            maxWidth: 420,
+            borderRadius: 20,
+            padding: 'clamp(14px, 2.5vh, 22px) clamp(14px, 3vw, 22px)',
             display: 'flex',
             flexDirection: 'column',
-            gap: 20,
+            gap: 'clamp(12px, 2vh, 16px)',
             boxShadow: '0 20px 50px rgba(0,0,0,0.8), 0 0 30px rgba(245,158,11,0.15)',
             border: '1px solid rgba(245,158,11,0.25)',
+            maxHeight: '92dvh',
+            overflowY: 'auto',
+            boxSizing: 'border-box',
           }}
-          initial={{ scale: 0.9, opacity: 0, y: 20 }}
+          initial={{ scale: 0.9, opacity: 0, y: 15 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.9, opacity: 0 }}
         >
           {/* Header */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div
                 style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 12,
+                  width: 36,
+                  height: 36,
+                  borderRadius: 10,
                   backgroundColor: 'rgba(245, 158, 11, 0.15)',
                   border: '1px solid rgba(245, 158, 11, 0.3)',
                   display: 'flex',
@@ -104,16 +107,16 @@ export const PlayerNameModal: React.FC<PlayerNameModalProps> = ({
                   color: '#fbbf24',
                 }}
               >
-                <User size={24} />
+                <User size={20} />
               </div>
               <div>
                 <h2
                   className="gold-gradient-text"
-                  style={{ fontFamily: 'var(--font-serif)', fontSize: 22, margin: 0, letterSpacing: '0.02em' }}
+                  style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(17px, 3.8vw, 20px)', margin: 0, letterSpacing: '0.02em' }}
                 >
                   ENTER YOUR NAME
                 </h2>
-                <p style={{ fontSize: 13, color: 'rgba(255, 255, 255, 0.6)', margin: '3px 0 0' }}>
+                <p style={{ fontSize: 11.5, color: 'rgba(255, 255, 255, 0.6)', margin: '2px 0 0' }}>
                   {mode === 'MULTIPLAYER'
                     ? 'Display name for multiplayer tables'
                     : 'Display name for solo match'}
@@ -130,7 +133,7 @@ export const PlayerNameModal: React.FC<PlayerNameModalProps> = ({
                 background: 'rgba(255, 255, 255, 0.06)',
                 border: '1px solid rgba(255, 255, 255, 0.1)',
                 color: 'rgba(255, 255, 255, 0.7)',
-                padding: 6,
+                padding: 5,
                 borderRadius: '50%',
                 cursor: 'pointer',
                 display: 'flex',
@@ -138,23 +141,23 @@ export const PlayerNameModal: React.FC<PlayerNameModalProps> = ({
                 justifyContent: 'center',
               }}
             >
-              <X size={18} />
+              <X size={16} />
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(10px, 1.8vh, 14px)' }}>
             {/* Name Input */}
             <div>
               <label
                 style={{
-                  fontSize: 12,
+                  fontSize: 11,
                   fontWeight: 800,
                   color: '#fbbf24',
                   textTransform: 'uppercase',
-                  letterSpacing: '0.06em',
+                  letterSpacing: '0.05em',
                   display: 'flex',
                   justifyContent: 'space-between',
-                  marginBottom: 8,
+                  marginBottom: 6,
                 }}
               >
                 <span>Player Name</span>
@@ -174,12 +177,12 @@ export const PlayerNameModal: React.FC<PlayerNameModalProps> = ({
                   style={{
                     width: '100%',
                     boxSizing: 'border-box',
-                    padding: '13px 16px',
-                    borderRadius: 14,
+                    padding: '10px 14px',
+                    borderRadius: 12,
                     backgroundColor: 'rgba(0, 0, 0, 0.45)',
                     border: '1.5px solid rgba(245, 158, 11, 0.35)',
                     color: '#fff',
-                    fontSize: 16,
+                    fontSize: 14,
                     fontWeight: 600,
                     outline: 'none',
                     transition: 'border-color 0.2s, box-shadow 0.2s',
@@ -200,13 +203,13 @@ export const PlayerNameModal: React.FC<PlayerNameModalProps> = ({
             <div>
               <label
                 style={{
-                  fontSize: 12,
+                  fontSize: 11,
                   fontWeight: 800,
                   color: '#fbbf24',
                   textTransform: 'uppercase',
-                  letterSpacing: '0.06em',
+                  letterSpacing: '0.05em',
                   display: 'block',
-                  marginBottom: 10,
+                  marginBottom: 6,
                 }}
               >
                 Choose Avatar
@@ -214,9 +217,9 @@ export const PlayerNameModal: React.FC<PlayerNameModalProps> = ({
               <div
                 style={{
                   display: 'flex',
-                  gap: 10,
+                  gap: 8,
                   overflowX: 'auto',
-                  paddingBottom: 6,
+                  paddingBottom: 4,
                   scrollbarWidth: 'thin',
                 }}
               >
@@ -233,22 +236,22 @@ export const PlayerNameModal: React.FC<PlayerNameModalProps> = ({
                       style={{
                         position: 'relative',
                         flex: '0 0 auto',
-                        background: isSelected ? 'rgba(245,158,11,0.22)' : 'rgba(255,255,255,0.04)',
-                        border: isSelected ? '2px solid #fbbf24' : '1px solid rgba(255,255,255,0.12)',
-                        borderRadius: 18,
-                        padding: 4,
+                        background: isSelected ? 'rgba(245,158,11,0.25)' : 'rgba(255,255,255,0.04)',
+                        border: isSelected ? '2px solid #fbbf24' : '1px solid rgba(255,255,255,0.1)',
+                        borderRadius: 14,
+                        padding: 3,
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         transition: 'all 0.18s ease',
-                        boxShadow: isSelected ? '0 0 14px rgba(251,191,36,0.35)' : 'none',
+                        boxShadow: isSelected ? '0 0 12px rgba(251,191,36,0.35)' : 'none',
                       }}
                     >
                       <PlayerAvatar
                         avatarId={av.id}
                         name={av.name}
-                        size={56}
+                        size={46}
                         status={isSelected ? 'YOUR_TURN' : 'IDLE'}
                         showStatusRing={isSelected}
                       />
@@ -258,17 +261,17 @@ export const PlayerNameModal: React.FC<PlayerNameModalProps> = ({
                             position: 'absolute',
                             top: 2,
                             right: 2,
-                            width: 16,
-                            height: 16,
+                            width: 14,
+                            height: 14,
                             borderRadius: '50%',
                             backgroundColor: '#fbbf24',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            boxShadow: '0 2px 5px rgba(0,0,0,0.6)',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.6)',
                           }}
                         >
-                          <Check size={10} color="#1a0f02" strokeWidth={3.5} />
+                          <Check size={9} color="#1a0f02" strokeWidth={3.5} />
                         </div>
                       )}
                     </button>
@@ -278,7 +281,7 @@ export const PlayerNameModal: React.FC<PlayerNameModalProps> = ({
             </div>
 
             {/* Actions */}
-            <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+            <div style={{ display: 'flex', gap: 8, marginTop: 2 }}>
               <button
                 type="button"
                 onClick={() => {
@@ -287,12 +290,12 @@ export const PlayerNameModal: React.FC<PlayerNameModalProps> = ({
                 }}
                 style={{
                   flex: 1,
-                  padding: '13px 20px',
-                  borderRadius: 14,
+                  padding: '10px 16px',
+                  borderRadius: 12,
                   backgroundColor: 'rgba(255, 255, 255, 0.08)',
                   border: '1px solid rgba(255, 255, 255, 0.12)',
                   color: 'rgba(255, 255, 255, 0.75)',
-                  fontSize: 14,
+                  fontSize: 13,
                   fontWeight: 700,
                   cursor: 'pointer',
                 }}
@@ -301,12 +304,12 @@ export const PlayerNameModal: React.FC<PlayerNameModalProps> = ({
               </button>
               <button
                 type="submit"
-                className="gold-btn"
+                className="gold-button"
                 style={{
                   flex: 2,
-                  padding: '13px 20px',
-                  borderRadius: 14,
-                  fontSize: 14,
+                  padding: '10px 16px',
+                  borderRadius: 12,
+                  fontSize: 13,
                   fontWeight: 800,
                   display: 'flex',
                   alignItems: 'center',
@@ -315,7 +318,7 @@ export const PlayerNameModal: React.FC<PlayerNameModalProps> = ({
                   cursor: 'pointer',
                 }}
               >
-                <Play size={16} fill="currentColor" />
+                <Play size={15} fill="currentColor" />
                 <span>CONTINUE</span>
               </button>
             </div>
