@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { RotateCw, Smartphone, Sparkles, Maximize2 } from 'lucide-react';
-import { requestMobileFullscreen } from './MobileFullscreenButton';
+import { RotateCw, Sparkles } from 'lucide-react';
 
 export const OrientationPrompt: React.FC = () => {
   const [isPortrait, setIsPortrait] = useState(false);
@@ -282,50 +281,28 @@ export const OrientationPrompt: React.FC = () => {
             </p>
           </div>
 
-          {/* Fullscreen & Rotate button */}
-          <button
-            onClick={async () => {
-              try {
-                await requestMobileFullscreen();
-              } catch {
-                // Ignore if not permitted
-              }
-              setIsDismissed(true);
-            }}
-            className="action-btn primary"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              padding: '10px 20px',
-              fontSize: 13,
-              fontWeight: 800,
-              boxShadow: '0 0 20px rgba(245, 158, 11, 0.4)',
-              width: '100%',
-              justifyContent: 'center',
-            }}
-          >
-            <Maximize2 size={16} fill="#05110d" />
-            <span>PLAY IN FULLSCREEN</span>
-          </button>
-
           {/* Dismiss / Continue in portrait fallback button */}
           <button
             onClick={() => setIsDismissed(true)}
             style={{
-              marginTop: -6,
-              background: 'transparent',
-              border: 'none',
-              color: 'rgba(255, 255, 255, 0.45)',
+              background: 'rgba(255, 255, 255, 0.08)',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              color: 'rgba(255, 255, 255, 0.75)',
+              borderRadius: 9999,
               fontSize: 12,
               fontWeight: 600,
               cursor: 'pointer',
-              textDecoration: 'underline',
-              padding: '6px 12px',
-              transition: 'color 0.2s',
+              padding: '8px 18px',
+              transition: 'all 0.2s ease',
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = '#fbbf24')}
-            onMouseLeave={(e) => (e.currentTarget.style.color = 'rgba(255, 255, 255, 0.45)')}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = '#fbbf24';
+              e.currentTarget.style.borderColor = 'rgba(245, 158, 11, 0.4)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = 'rgba(255, 255, 255, 0.75)';
+              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+            }}
           >
             Continue in portrait anyway
           </button>
