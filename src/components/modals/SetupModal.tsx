@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BOT_PRESETS, BotProfile } from '../../game/ai/personalities';
 import { AIDifficulty } from '../../game/engine/gameState';
-import { Play, X, Check, Users, Sparkles } from 'lucide-react';
+import { Play, X, Check } from 'lucide-react';
 import { soundManager } from '../../audio/soundEffects';
 import { PlayerAvatar } from '../common/PlayerAvatar';
-import { DEFAULT_AVATARS, OPTIONAL_AVATARS, getAvatarData } from '../../game/avatars/avatarData';
+import { getAvatarData } from '../../game/avatars/avatarData';
 
 interface SetupModalProps {
   isOpen: boolean;
@@ -30,7 +30,6 @@ export const SetupModal: React.FC<SetupModalProps> = ({
 }) => {
   const [playerName, setPlayerName] = useState(initialPlayerName || 'Player');
   const [playerAvatar, setPlayerAvatar] = useState(initialPlayerAvatar || 'avatar-1');
-  const [avatarCategory, setAvatarCategory] = useState<'DEFAULT' | 'OPTIONAL'>('DEFAULT');
   const [difficulty, setDifficulty] = useState<AIDifficulty>('MEDIUM');
 
   useEffect(() => {
@@ -118,8 +117,6 @@ export const SetupModal: React.FC<SetupModalProps> = ({
     HARD: '#ef4444',
   };
 
-  const activeAvatarsList = avatarCategory === 'DEFAULT' ? DEFAULT_AVATARS : OPTIONAL_AVATARS;
-
   return (
     <AnimatePresence>
       <div
@@ -139,14 +136,13 @@ export const SetupModal: React.FC<SetupModalProps> = ({
           className="glass-panel"
           style={{
             width: '100%',
-            maxWidth: 540,
+            maxWidth: 500,
             borderRadius: 20,
             padding: 'clamp(14px, 2.5vh, 22px) clamp(14px, 3vw, 22px)',
             display: 'flex',
             flexDirection: 'column',
-            gap: 'clamp(10px, 1.8vh, 16px)',
+            gap: 'clamp(12px, 2vh, 18px)',
             maxHeight: '92dvh',
-            overflowY: 'auto',
             boxSizing: 'border-box',
           }}
           initial={{ scale: 0.9, opacity: 0, y: 15 }}
@@ -155,13 +151,22 @@ export const SetupModal: React.FC<SetupModalProps> = ({
         >
           {/* Header */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <h2 className="gold-gradient-text" style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(18px, 4vw, 22px)', margin: 0 }}>
-                MATCH SETUP
-              </h2>
-              <p style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.55)', margin: '2px 0 0' }}>
-                Solo table opponents and character profile
-              </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <PlayerAvatar
+                avatarId={normalizedUserAvatar}
+                name={playerName}
+                size={38}
+                status="YOUR_TURN"
+                showStatusRing={false}
+              />
+              <div>
+                <h2 className="gold-gradient-text" style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(18px, 4vw, 22px)', margin: 0 }}>
+                  MATCH SETUP
+                </h2>
+                <p style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.65)', margin: '1px 0 0' }}>
+                  Player: <strong style={{ color: '#fbbf24' }}>{playerName}</strong>
+                </p>
+              </div>
             </div>
             <button
               onClick={onClose}
@@ -179,175 +184,6 @@ export const SetupModal: React.FC<SetupModalProps> = ({
             >
               <X size={16} />
             </button>
-          </div>
-
-          {/* ── Your Character Section ── */}
-          <div
-            style={{
-              background: 'rgba(0,0,0,0.3)',
-              padding: 'clamp(8px, 1.6vh, 12px)',
-              borderRadius: 14,
-              border: '1px solid rgba(245,158,11,0.2)',
-            }}
-          >
-            {/* Top row: Avatar Preview + Name Field + Avatar Tabs */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-              {/* Selected avatar thumbnail */}
-              <div style={{ flexShrink: 0 }}>
-                <PlayerAvatar
-                  avatarId={normalizedUserAvatar}
-                  name={playerName}
-                  size={42}
-                  status="YOUR_TURN"
-                  showStatusRing={true}
-                />
-              </div>
-
-              {/* Name input */}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
-                  <label style={{ fontSize: 10, fontWeight: 800, color: '#fbbf24', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                    Player Name
-                  </label>
-                  <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>{playerName.length}/16</span>
-                </div>
-                <input
-                  type="text"
-                  value={playerName}
-                  maxLength={16}
-                  placeholder="Enter name..."
-                  onChange={(e) => setPlayerName(e.target.value)}
-                  style={{
-                    width: '100%',
-                    boxSizing: 'border-box',
-                    padding: '6px 10px',
-                    borderRadius: 8,
-                    backgroundColor: 'rgba(0, 0, 0, 0.45)',
-                    border: '1px solid rgba(245, 158, 11, 0.3)',
-                    color: '#fff',
-                    fontSize: 13,
-                    fontWeight: 700,
-                    outline: 'none',
-                  }}
-                />
-              </div>
-
-              {/* Avatar Category Selector */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 3, flexShrink: 0 }}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    soundManager.playButtonClick();
-                    setAvatarCategory('DEFAULT');
-                  }}
-                  style={{
-                    padding: '3px 8px',
-                    borderRadius: 6,
-                    fontSize: 10,
-                    fontWeight: 800,
-                    border: 'none',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 3,
-                    backgroundColor: avatarCategory === 'DEFAULT' ? '#fbbf24' : 'rgba(255,255,255,0.06)',
-                    color: avatarCategory === 'DEFAULT' ? '#1a0f02' : 'rgba(255,255,255,0.6)',
-                  }}
-                >
-                  <Users size={11} />
-                  <span>Default</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    soundManager.playButtonClick();
-                    setAvatarCategory('OPTIONAL');
-                  }}
-                  style={{
-                    padding: '3px 8px',
-                    borderRadius: 6,
-                    fontSize: 10,
-                    fontWeight: 800,
-                    border: 'none',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 3,
-                    backgroundColor: avatarCategory === 'OPTIONAL' ? '#fbbf24' : 'rgba(255,255,255,0.06)',
-                    color: avatarCategory === 'OPTIONAL' ? '#1a0f02' : 'rgba(255,255,255,0.6)',
-                  }}
-                >
-                  <Sparkles size={11} />
-                  <span>More</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Avatar horizontal carousel row */}
-            <div
-              style={{
-                display: 'flex',
-                gap: 6,
-                overflowX: 'auto',
-                paddingBottom: 2,
-                scrollbarWidth: 'thin',
-              }}
-            >
-              {activeAvatarsList.map((av) => {
-                const isSelected = normalizedUserAvatar === av.id;
-                return (
-                  <motion.button
-                    key={av.id}
-                    type="button"
-                    onClick={() => {
-                      soundManager.playButtonClick();
-                      setPlayerAvatar(av.id);
-                    }}
-                    whileTap={{ scale: 0.94 }}
-                    style={{
-                      position: 'relative',
-                      flex: '0 0 auto',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      padding: 2,
-                      borderRadius: 12,
-                      backgroundColor: isSelected ? 'rgba(245,158,11,0.25)' : 'rgba(255,255,255,0.04)',
-                      border: isSelected ? '2px solid #fbbf24' : '1px solid rgba(255,255,255,0.08)',
-                      boxShadow: isSelected ? '0 0 10px rgba(251,191,36,0.35)' : 'none',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <PlayerAvatar
-                      avatarId={av.id}
-                      name={av.name}
-                      size={40}
-                      status={isSelected ? 'YOUR_TURN' : 'IDLE'}
-                      showStatusRing={false}
-                    />
-                    {isSelected && (
-                      <div
-                        style={{
-                          position: 'absolute',
-                          top: 1,
-                          right: 1,
-                          width: 13,
-                          height: 13,
-                          borderRadius: '50%',
-                          backgroundColor: '#fbbf24',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          boxShadow: '0 1px 3px rgba(0,0,0,0.6)',
-                        }}
-                      >
-                        <Check size={8} color="#1a0f02" strokeWidth={3.5} />
-                      </div>
-                    )}
-                  </motion.button>
-                );
-              })}
-            </div>
           </div>
 
           {/* ── AI Difficulty Inline Segmented Control ── */}

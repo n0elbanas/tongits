@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { User, Play, X, Check } from 'lucide-react';
 import { soundManager } from '../../audio/soundEffects';
 import { PlayerAvatar } from '../common/PlayerAvatar';
-import { DEFAULT_AVATARS } from '../../game/avatars/avatarData';
+import { AVATARS_CATALOG } from '../../game/avatars/avatarData';
 
 interface PlayerNameModalProps {
   isOpen: boolean;
@@ -201,19 +201,22 @@ export const PlayerNameModal: React.FC<PlayerNameModalProps> = ({
 
             {/* Avatar Selection */}
             <div>
-              <label
-                style={{
-                  fontSize: 11,
-                  fontWeight: 800,
-                  color: '#fbbf24',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                  display: 'block',
-                  marginBottom: 6,
-                }}
-              >
-                Choose Avatar
-              </label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                <label
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 800,
+                    color: '#fbbf24',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                  }}
+                >
+                  Choose Avatar ({AVATARS_CATALOG.length})
+                </label>
+                <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)' }}>
+                  Swipe to browse all
+                </span>
+              </div>
               <div
                 style={{
                   display: 'flex',
@@ -223,12 +226,13 @@ export const PlayerNameModal: React.FC<PlayerNameModalProps> = ({
                   scrollbarWidth: 'thin',
                 }}
               >
-                {DEFAULT_AVATARS.map((av) => {
+                {AVATARS_CATALOG.map((av) => {
                   const isSelected = av.id === avatarId;
                   return (
                     <button
                       key={av.id}
                       type="button"
+                      title={av.name}
                       onClick={() => {
                         soundManager.playButtonClick();
                         setAvatarId(av.id);
