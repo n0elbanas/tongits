@@ -143,7 +143,7 @@ export function App() {
   return (
     <DeckStyleProvider>
       <div style={{ width: '100%', height: '100%' }}>
-        {currentScreen === 'GAME' && <OrientationPrompt />}
+        <OrientationPrompt />
         {currentScreen === 'HOME' && (
           <HomeScreen
             onPlaySolo={handlePlaySoloClick}

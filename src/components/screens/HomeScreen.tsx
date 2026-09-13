@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Play, Users, BookOpen, Settings, Sparkles, Gift, Tv, Coins, ShieldCheck, AlertCircle } from 'lucide-react';
 import { soundManager } from '../../audio/soundEffects';
-import { MobileFullscreenButton } from '../ui/MobileFullscreenButton';
 import { chipBankroll, DailyRewardStatus } from '../../services/chipBankroll';
 import { DailyRewardModal } from '../modals/DailyRewardModal';
 import { FreeChipsModal } from '../modals/FreeChipsModal';
@@ -179,11 +178,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               +
             </span>
           </button>
-        </div>
-
-        {/* Right Side: Fullscreen Button */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-          <MobileFullscreenButton />
         </div>
       </header>
 
